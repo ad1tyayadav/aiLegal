@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import { AlertTriangle, FileText } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface RiskyClause {
     id: number;
@@ -18,64 +18,39 @@ interface Props {
     highlightedClauseId?: number;
 }
 
-const RISK_HIGHLIGHT_STYLES = {
-    CRITICAL: 'bg-red-100 border-l-4 border-red-500 hover:bg-red-200',
-    HIGH: 'bg-orange-100 border-l-4 border-orange-500 hover:bg-orange-200',
-    MEDIUM: 'bg-yellow-100 border-l-4 border-yellow-500 hover:bg-yellow-200',
-    LOW: 'bg-blue-100 border-l-4 border-blue-500 hover:bg-blue-200'
+const HIGHLIGHT_STYLES = {
+    CRITICAL: 'bg-red-100 hover:bg-red-200 border-b-2 border-red-400',
+    HIGH: 'bg-orange-100 hover:bg-orange-200 border-b-2 border-orange-400',
+    MEDIUM: 'bg-yellow-100 hover:bg-yellow-200 border-b-2 border-yellow-400',
+    LOW: 'bg-blue-100 hover:bg-blue-200 border-b-2 border-blue-400'
 };
 
-const RISK_ICON_COLORS = {
-    CRITICAL: 'text-red-600',
-    HIGH: 'text-orange-600',
-    MEDIUM: 'text-yellow-600',
-    LOW: 'text-blue-600'
-};
-
-export default function ContractViewer({
-    contractText,
-    riskyClauses,
-    onClauseClick,
-    highlightedClauseId
-}: Props) {
+export default function ContractViewer({ contractText, riskyClauses, onClauseClick, highlightedClauseId }: Props) {
     const viewerRef = useRef<HTMLDivElement>(null);
     const clauseRefs = useRef<{ [key: number]: HTMLElement }>({});
 
-    // Scroll to highlighted clause when triggered externally
     useEffect(() => {
         if (highlightedClauseId !== undefined && clauseRefs.current[highlightedClauseId]) {
-            clauseRefs.current[highlightedClauseId].scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
+            clauseRefs.current[highlightedClauseId].scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }, [highlightedClauseId]);
 
-    // Build annotated text with highlights
     const renderAnnotatedText = () => {
         if (!contractText) {
-            return <p className="text-gray-500 italic">No contract text to display</p>;
+            return <p className="text-neutral-400 italic">No contract text available</p>;
         }
 
-        // If no risky clauses, just show plain text
         if (!riskyClauses || riskyClauses.length === 0) {
-            return (
-                <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-                    {contractText}
-                </div>
-            );
+            return <div className="whitespace-pre-wrap text-neutral-800 leading-relaxed">{contractText}</div>;
         }
 
         let lastIndex = 0;
         const parts: JSX.Element[] = [];
-
-        // Sort clauses by start position
         const sortedClauses = [...riskyClauses]
             .filter(c => c.startIndex >= 0 && c.endIndex > c.startIndex)
             .sort((a, b) => a.startIndex - b.startIndex);
 
         sortedClauses.forEach((clause, idx) => {
-            // Add text before this clause
             if (clause.startIndex > lastIndex) {
                 parts.push(
                     <span key={`text-${idx}`} className="whitespace-pre-wrap">
@@ -83,50 +58,27 @@ export default function ContractViewer({
                     </span>
                 );
             }
-
-            // Skip if overlapping with previous clause
             if (clause.startIndex < lastIndex) return;
 
             const isHighlighted = highlightedClauseId === clause.id;
-
-            // Add highlighted clause
             parts.push(
                 <span
                     key={`clause-${clause.id}`}
                     ref={(el) => { if (el) clauseRefs.current[clause.id] = el; }}
                     className={`
-            ${RISK_HIGHLIGHT_STYLES[clause.riskLevel]}
-            cursor-pointer transition-all duration-200
-            relative group inline px-1 py-0.5 rounded-sm
-            ${isHighlighted ? 'ring-2 ring-offset-2 ring-indigo-500 animate-pulse' : ''}
+            ${HIGHLIGHT_STYLES[clause.riskLevel]}
+            cursor-pointer transition-all duration-200 rounded px-0.5
+            ${isHighlighted ? 'ring-2 ring-neutral-900 ring-offset-1 scale-[1.01]' : ''}
           `}
                     onClick={() => onClauseClick(clause.id)}
+                    title="Click to view analysis"
                 >
-                    <AlertTriangle
-                        className={`inline h-4 w-4 mr-1 ${RISK_ICON_COLORS[clause.riskLevel]}`}
-                    />
-                    <span className="whitespace-pre-wrap">
-                        {contractText.substring(clause.startIndex, clause.endIndex)}
-                    </span>
-
-                    {/* Hover Tooltip */}
-                    <span className="
-            invisible group-hover:visible opacity-0 group-hover:opacity-100
-            absolute left-0 -top-10 bg-gray-900 text-white text-xs
-            px-3 py-1.5 rounded-lg whitespace-nowrap z-20
-            shadow-lg transition-opacity duration-200
-            after:content-[''] after:absolute after:top-full after:left-4
-            after:border-4 after:border-transparent after:border-t-gray-900
-          ">
-                        ⚠️ {clause.riskLevel} risk - Click to see why
-                    </span>
+                    {contractText.substring(clause.startIndex, clause.endIndex)}
                 </span>
             );
-
             lastIndex = clause.endIndex;
         });
 
-        // Add remaining text after last clause
         if (lastIndex < contractText.length) {
             parts.push(
                 <span key="text-end" className="whitespace-pre-wrap">
@@ -138,67 +90,43 @@ export default function ContractViewer({
         return parts;
     };
 
-    // Count clauses by risk level
-    const riskCounts = riskyClauses.reduce((acc, clause) => {
-        acc[clause.riskLevel] = (acc[clause.riskLevel] || 0) + 1;
-        return acc;
-    }, {} as Record<string, number>);
+    const wordCount = contractText.split(/\s+/).filter(w => w.length > 0).length;
 
     return (
-        <div ref={viewerRef} className="p-8">
-            {/* Document Header */}
-            <div className="mb-6 pb-4 border-b-2 border-gray-200">
-                <div className="flex items-center gap-3 mb-3">
-                    <div className="p-2 bg-indigo-100 rounded-lg">
-                        <FileText className="h-6 w-6 text-indigo-600" />
-                    </div>
+        <div ref={viewerRef} className="h-full overflow-auto bg-white">
+            {/* Header */}
+            <div className="sticky top-0 bg-white z-10 px-6 py-4 border-b border-neutral-200">
+                <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-xl font-bold text-gray-900">Contract Document</h1>
-                        <p className="text-sm text-gray-500">
-                            {contractText.split(/\s+/).filter(w => w.length > 0).length} words
+                        <h1 className="text-base font-semibold text-neutral-900">Contract Document</h1>
+                        <p className="text-sm text-neutral-500 mt-0.5">
+                            {wordCount.toLocaleString()} words
+                            {riskyClauses.length > 0 && (
+                                <span className="ml-2 text-orange-600">• {riskyClauses.length} issues highlighted</span>
+                            )}
                         </p>
                     </div>
+                    {riskyClauses.length > 0 && (
+                        <div className="hidden md:flex items-center gap-2">
+                            <span className="flex items-center gap-1.5 text-xs">
+                                <span className="w-3 h-2 rounded-sm bg-red-100 border border-red-300" /> Critical
+                            </span>
+                            <span className="flex items-center gap-1.5 text-xs">
+                                <span className="w-3 h-2 rounded-sm bg-orange-100 border border-orange-300" /> High
+                            </span>
+                            <span className="flex items-center gap-1.5 text-xs">
+                                <span className="w-3 h-2 rounded-sm bg-yellow-100 border border-yellow-300" /> Medium
+                            </span>
+                        </div>
+                    )}
                 </div>
-
-                {/* Legend */}
-                {riskyClauses.length > 0 && (
-                    <div className="flex flex-wrap gap-3 text-xs">
-                        <span className="text-gray-500">Highlights:</span>
-                        {riskCounts.CRITICAL && (
-                            <span className="flex items-center gap-1">
-                                <span className="w-3 h-3 bg-red-500 rounded-sm" />
-                                Critical ({riskCounts.CRITICAL})
-                            </span>
-                        )}
-                        {riskCounts.HIGH && (
-                            <span className="flex items-center gap-1">
-                                <span className="w-3 h-3 bg-orange-500 rounded-sm" />
-                                High ({riskCounts.HIGH})
-                            </span>
-                        )}
-                        {riskCounts.MEDIUM && (
-                            <span className="flex items-center gap-1">
-                                <span className="w-3 h-3 bg-yellow-500 rounded-sm" />
-                                Medium ({riskCounts.MEDIUM})
-                            </span>
-                        )}
-                        {riskCounts.LOW && (
-                            <span className="flex items-center gap-1">
-                                <span className="w-3 h-3 bg-blue-500 rounded-sm" />
-                                Low ({riskCounts.LOW})
-                            </span>
-                        )}
-                    </div>
-                )}
-
-                <p className="text-sm text-gray-600 mt-3 bg-indigo-50 p-3 rounded-lg">
-                    📄 Risky clauses are highlighted below. <strong>Click any highlighted text</strong> to see the legal analysis.
-                </p>
             </div>
 
-            {/* Contract Text with Annotations */}
-            <div className="font-serif text-base text-gray-800 leading-relaxed">
-                {renderAnnotatedText()}
+            {/* Contract Text */}
+            <div className="px-6 py-6">
+                <div className="text-[15px] text-neutral-800 leading-[1.85] max-w-3xl">
+                    {renderAnnotatedText()}
+                </div>
             </div>
         </div>
     );

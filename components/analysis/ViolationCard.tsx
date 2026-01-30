@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, ExternalLink, ArrowRight, Scale, AlertTriangle } from 'lucide-react';
-import Badge from '@/components/ui/Badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 interface ViolationProps {
     id: number;
@@ -11,18 +13,10 @@ interface ViolationProps {
     violationType: string;
     riskLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
     riskScore: number;
-    indianLawReference: {
-        section: string;
-        title: string;
-        fullText: string;
-        summary: string;
-        url: string;
-    };
-    explanation: {
-        simple: string;
-        realLifeImpact: string;
-    };
-    matchedKeywords?: string[];
+    appliesTo?: string[];
+    businessRisk?: string;
+    indianLawReference: { section: string; title: string; fullText: string; summary: string; url: string; };
+    explanation: { simple: string; realLifeImpact: string; };
 }
 
 interface Props {
@@ -31,160 +25,111 @@ interface Props {
     isHighlighted?: boolean;
 }
 
-const RISK_BORDER_COLORS = {
-    CRITICAL: 'border-red-400 bg-red-50',
-    HIGH: 'border-orange-400 bg-orange-50',
-    MEDIUM: 'border-yellow-400 bg-yellow-50',
-    LOW: 'border-blue-400 bg-blue-50'
-};
-
 export default function ViolationCard({ violation, onJumpToClause, isHighlighted }: Props) {
     const [expanded, setExpanded] = useState(false);
 
+    const getBadgeVariant = (): "default" | "secondary" | "destructive" | "outline" => {
+        switch (violation.riskLevel) {
+            case 'CRITICAL': return 'destructive';
+            case 'HIGH': return 'default';
+            default: return 'secondary';
+        }
+    };
+
+    const getBorderColor = () => {
+        switch (violation.riskLevel) {
+            case 'CRITICAL': return 'border-l-red-500';
+            case 'HIGH': return 'border-l-orange-500';
+            case 'MEDIUM': return 'border-l-yellow-500';
+            case 'LOW': return 'border-l-blue-500';
+        }
+    };
+
     return (
-        <div
-            className={`
-        border-2 rounded-xl p-5 transition-all duration-300
-        ${RISK_BORDER_COLORS[violation.riskLevel]}
-        ${isHighlighted ? 'ring-4 ring-indigo-500 ring-offset-2 scale-[1.02]' : ''}
-      `}
-        >
-            {/* Header */}
-            <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg ${violation.riskLevel === 'CRITICAL' ? 'bg-red-200' :
-                            violation.riskLevel === 'HIGH' ? 'bg-orange-200' :
-                                violation.riskLevel === 'MEDIUM' ? 'bg-yellow-200' : 'bg-blue-200'
-                        }`}>
-                        <AlertTriangle className="h-5 w-5" />
-                    </div>
+        <Card className={`
+      border-l-4 ${getBorderColor()}
+      ${isHighlighted ? 'ring-2 ring-neutral-900 ring-offset-2' : ''}
+      transition-all hover:shadow-md
+    `}>
+            <CardContent className="p-4">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3 mb-3">
                     <div>
-                        <h3 className="font-bold text-lg text-gray-900">
-                            Clause #{violation.clauseNumber}
-                        </h3>
-                        <p className="text-sm text-gray-600 capitalize">
-                            {violation.violationType.replace(/_/g, ' ')}
-                        </p>
+                        <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-neutral-900">Clause {violation.clauseNumber}</h3>
+                            <Badge variant={getBadgeVariant()} className="text-xs">{violation.riskLevel}</Badge>
+                        </div>
+                        <p className="text-sm text-neutral-500 capitalize">{violation.violationType.replace(/_/g, ' ')}</p>
                     </div>
                 </div>
-                <Badge riskLevel={violation.riskLevel} />
-            </div>
 
-            {/* Indian Law Reference */}
-            <div className="bg-white/70 rounded-lg p-4 mb-4 border border-gray-200">
-                <div className="flex items-start gap-3">
-                    <Scale className="h-6 w-6 text-indigo-600 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1">
-                        <p className="font-semibold text-indigo-900">
-                            Violates: {violation.indianLawReference.section}
-                        </p>
-                        <p className="text-sm text-gray-700 italic mt-1">
-                            "{violation.indianLawReference.title}"
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Simple Explanation */}
-            <div className="mb-4">
-                <p className="font-semibold text-sm text-gray-800 mb-2 flex items-center gap-2">
-                    <span className="text-lg">🔍</span> What does this mean?
-                </p>
-                <p className="text-gray-700 leading-relaxed">
-                    {violation.explanation.simple || violation.indianLawReference.summary}
-                </p>
-            </div>
-
-            {/* Real-Life Impact */}
-            <div className="bg-white/70 rounded-lg p-4 mb-4 border border-gray-200">
-                <p className="font-semibold text-sm text-gray-800 mb-2 flex items-center gap-2">
-                    <span className="text-lg">💡</span> How does this affect you?
-                </p>
-                <p className="text-gray-700 leading-relaxed">
-                    {violation.explanation.realLifeImpact || 'This clause may put you at significant legal or financial disadvantage.'}
-                </p>
-            </div>
-
-            {/* Matched Keywords (if any) */}
-            {violation.matchedKeywords && violation.matchedKeywords.length > 0 && (
-                <div className="mb-4">
-                    <p className="text-xs text-gray-500 mb-2">Detected keywords:</p>
-                    <div className="flex flex-wrap gap-1">
-                        {violation.matchedKeywords.map((keyword, idx) => (
-                            <span
-                                key={idx}
-                                className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full"
-                            >
-                                {keyword}
-                            </span>
+                {/* Impact Tags */}
+                {(violation.businessRisk || (violation.appliesTo && violation.appliesTo.length > 0)) && (
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                        {violation.businessRisk && (
+                            <Badge variant="outline" className="text-xs border-red-200 text-red-700 bg-red-50">
+                                {violation.businessRisk}
+                            </Badge>
+                        )}
+                        {violation.appliesTo?.map((role, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">
+                                {role}
+                            </Badge>
                         ))}
                     </div>
+                )}
+
+                {/* Law Reference */}
+                <div className="bg-neutral-50 rounded-lg p-3 mb-3 border">
+                    <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Legal Reference</p>
+                    <p className="text-sm font-medium text-neutral-900">{violation.indianLawReference.section}</p>
+                    <p className="text-sm text-neutral-600">{violation.indianLawReference.title}</p>
                 </div>
-            )}
 
-            {/* Actions */}
-            <div className="flex gap-2">
-                <button
-                    onClick={onJumpToClause}
-                    className="flex-1 py-2.5 px-4 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 
-            transition-colors flex items-center justify-center gap-2 font-medium shadow-sm"
-                >
-                    <ArrowRight className="h-4 w-4" />
-                    Jump to Clause
-                </button>
+                {/* Explanation */}
+                <p className="text-sm text-neutral-600 leading-relaxed">
+                    {violation.explanation.simple || violation.indianLawReference.summary}
+                </p>
 
-                <button
-                    onClick={() => setExpanded(!expanded)}
-                    className="px-4 py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 
-            transition-colors flex items-center gap-1 shadow-sm"
-                    title={expanded ? 'Show less' : 'Show more details'}
-                >
-                    {expanded ? (
-                        <ChevronUp className="h-4 w-4" />
-                    ) : (
-                        <ChevronDown className="h-4 w-4" />
-                    )}
-                </button>
-            </div>
-
-            {/* Expanded Details */}
-            {expanded && (
-                <div className="mt-4 pt-4 border-t border-gray-300 space-y-4 animate-in slide-in-from-top-2">
-                    {/* Full Legal Text */}
-                    <div>
-                        <p className="font-semibold text-sm text-gray-800 mb-2 flex items-center gap-2">
-                            <span className="text-lg">📜</span> Full Legal Text:
-                        </p>
-                        <div className="bg-white rounded-lg p-4 text-sm text-gray-700 font-mono 
-              max-h-40 overflow-y-auto border border-gray-200 leading-relaxed">
-                            {violation.indianLawReference.fullText}
-                        </div>
-                    </div>
-
-                    {/* Original Clause Text */}
-                    <div>
-                        <p className="font-semibold text-sm text-gray-800 mb-2 flex items-center gap-2">
-                            <span className="text-lg">📄</span> Original Clause from Contract:
-                        </p>
-                        <div className="bg-white rounded-lg p-4 text-sm text-gray-700 italic 
-              max-h-40 overflow-y-auto border border-gray-200 leading-relaxed">
-                            "{violation.originalText}"
-                        </div>
-                    </div>
-
-                    {/* Government Source Link */}
-                    <a
-                        href={violation.indianLawReference.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800 
-              hover:underline transition-colors"
-                    >
-                        <ExternalLink className="h-4 w-4" />
-                        View on IndiaCode.nic.in (Official Source)
-                    </a>
+                {/* Actions */}
+                <div className="flex items-center gap-3 mt-4 pt-3 border-t">
+                    <Button variant="ghost" size="sm" onClick={onJumpToClause} className="text-xs">
+                        View in document →
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setExpanded(!expanded)} className="text-xs text-neutral-500">
+                        {expanded ? 'Less' : 'More'} details
+                    </Button>
                 </div>
-            )}
-        </div>
+
+                {/* Expanded Content */}
+                {expanded && (
+                    <div className="mt-4 pt-4 space-y-4 border-t bg-neutral-50 -mx-4 px-4 pb-4 -mb-4 rounded-b-lg">
+                        {violation.explanation.realLifeImpact && (
+                            <div>
+                                <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Real-World Impact</p>
+                                <p className="text-sm text-neutral-600">{violation.explanation.realLifeImpact}</p>
+                            </div>
+                        )}
+                        <div>
+                            <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Original Clause</p>
+                            <p className="text-sm text-neutral-600 italic bg-white p-3 rounded border">
+                                "{violation.originalText}"
+                            </p>
+                        </div>
+                        <a
+                            href={violation.indianLawReference.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-sm text-neutral-900 font-medium hover:underline"
+                        >
+                            View on IndiaCode
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                        </a>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
     );
 }

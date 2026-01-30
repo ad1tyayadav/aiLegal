@@ -1,7 +1,7 @@
-'use client';
-
 import { useState, useRef } from 'react';
-import { Upload, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { FileText, Upload, X, CheckCircle, File } from 'lucide-react';
 
 interface Props {
     onUpload: (file: File, language: 'en' | 'hi') => void;
@@ -27,7 +27,6 @@ export default function ContractUploader({ onUpload }: Props) {
         e.preventDefault();
         e.stopPropagation();
         setDragActive(false);
-
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
             setSelectedFile(e.dataTransfer.files[0]);
         }
@@ -46,40 +45,57 @@ export default function ContractUploader({ onUpload }: Props) {
         }
     };
 
+    const formatFileSize = (bytes: number) => {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    };
+
     return (
-        <div className="space-y-4">
+        <div className="space-y-6 w-full max-w-md mx-auto">
             {/* Language Toggle */}
-            <div className="flex gap-2 justify-center">
-                <button
-                    onClick={() => setLanguage('en')}
-                    className={`px-4 py-2 rounded-lg ${language === 'en'
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-200 text-gray-700'
-                        }`}
-                >
-                    English
-                </button>
-                <button
-                    onClick={() => setLanguage('hi')}
-                    className={`px-4 py-2 rounded-lg ${language === 'hi'
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-200 text-gray-700'
-                        }`}
-                >
-                    हिन्दी (Hindi)
-                </button>
+            <div className="flex justify-center">
+                <div className="inline-flex bg-muted p-1 rounded-xl border border-border/50">
+                    <button
+                        onClick={() => setLanguage('en')}
+                        className={cn(
+                            "px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                            language === 'en'
+                                ? "bg-white text-primary shadow-sm ring-1 ring-black/5"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        English
+                    </button>
+                    <button
+                        onClick={() => setLanguage('hi')}
+                        className={cn(
+                            "px-5 py-2.5 text-sm font-medium rounded-lg transition-all duration-200",
+                            language === 'hi'
+                                ? "bg-white text-primary shadow-sm ring-1 ring-black/5"
+                                : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        हिंदी
+                    </button>
+                </div>
             </div>
 
             {/* Upload Area */}
             <div
-                className={`relative border-2 border-dashed rounded-lg p-12 text-center transition-colors ${dragActive
-                    ? 'border-indigo-600 bg-indigo-50'
-                    : 'border-gray-300 bg-gray-50'
-                    }`}
+                className={cn(
+                    "relative group rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer overflow-hidden",
+                    dragActive
+                        ? "border-primary bg-primary/5 scale-[1.02]"
+                        : selectedFile
+                            ? "border-green-500/50 bg-green-50/50"
+                            : "border-border hover:border-primary/50 hover:bg-muted/30"
+                )}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
+                onClick={() => !selectedFile && inputRef.current?.click()}
             >
                 <input
                     ref={inputRef}
@@ -89,52 +105,56 @@ export default function ContractUploader({ onUpload }: Props) {
                     onChange={handleChange}
                 />
 
-                {selectedFile ? (
-                    <div className="space-y-4">
-                        <FileText className="h-16 w-16 text-indigo-600 mx-auto" />
-                        <p className="text-lg font-medium text-gray-900">
-                            {selectedFile.name}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                            {(selectedFile.size / 1024).toFixed(2)} KB
-                        </p>
-                        <div className="flex gap-2 justify-center">
-                            <button
-                                onClick={() => setSelectedFile(null)}
-                                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-                            >
-                                Remove
-                            </button>
-                            <button
-                                onClick={handleSubmit}
-                                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
-                            >
-                                Analyze Contract
-                            </button>
+                <div className="p-6 md:p-10 flex flex-col items-center justify-center min-h-[220px] md:min-h-[280px]">
+                    {selectedFile ? (
+                        <div className="text-center space-y-4 animate-in fade-in zoom-in-95 duration-300">
+                            <div className="w-16 h-16 mx-auto rounded-full bg-green-100 flex items-center justify-center relative">
+                                <FileText className="w-8 h-8 text-green-600" />
+                                <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                                    <CheckCircle className="w-5 h-5 text-green-600 fill-green-100" />
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-foreground text-lg truncate max-w-[250px] mx-auto">
+                                    {selectedFile.name}
+                                </h4>
+                                <p className="text-sm text-muted-foreground mt-1 font-medium">
+                                    {formatFileSize(selectedFile.size)}
+                                </p>
+                            </div>
+                            <div className="flex gap-3 justify-center pt-2" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setSelectedFile(null)}
+                                    className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+                                >
+                                    Remove
+                                </Button>
+                                <Button onClick={handleSubmit} className="gap-2">
+                                    Analyze Contract
+                                </Button>
+                            </div>
                         </div>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        <Upload className="h-16 w-16 text-gray-400 mx-auto" />
-                        <div>
-                            <p className="text-lg font-medium text-gray-700">
-                                Drop your contract here
-                            </p>
-                            <p className="text-sm text-gray-500 mt-1">
-                                or click to browse
-                            </p>
+                    ) : (
+                        <div className="text-center space-y-5">
+                            <div className="w-20 h-20 mx-auto rounded-2xl bg-secondary/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <Upload className="w-10 h-10 text-primary" strokeWidth={1.5} />
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-lg font-semibold text-foreground">
+                                    Click or drag file to upload
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    PDF, DOCX, TXT (Max 10MB)
+                                </p>
+                            </div>
+                            <div className="flex gap-4 justify-center pt-2 opacity-60">
+                                <File className="w-6 h-6 text-muted-foreground" />
+                                <FileText className="w-6 h-6 text-muted-foreground" />
+                            </div>
                         </div>
-                        <button
-                            onClick={() => inputRef.current?.click()}
-                            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                        >
-                            Select File
-                        </button>
-                        <p className="text-xs text-gray-400">
-                            Supports PDF, DOCX, TXT, PNG, JPG (max 10MB)
-                        </p>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );

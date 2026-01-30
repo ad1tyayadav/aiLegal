@@ -1,9 +1,11 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import RiskScoreMeter from './RiskScoreMeter';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
 import ViolationCard from './ViolationCard';
-import { AlertTriangle, CheckCircle, Shield } from 'lucide-react';
 
 interface Violation {
     id: number;
@@ -12,186 +14,158 @@ interface Violation {
     violationType: string;
     riskLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
     riskScore: number;
-    indianLawReference: {
-        section: string;
-        title: string;
-        fullText: string;
-        summary: string;
-        url: string;
-    };
-    explanation: {
-        simple: string;
-        realLifeImpact: string;
-    };
-    matchedKeywords?: string[];
-}
-
-interface RiskBreakdown {
-    CRITICAL: number;
-    HIGH: number;
-    MEDIUM: number;
-    LOW: number;
+    appliesTo?: string[];
+    businessRisk?: string;
+    indianLawReference: { section: string; title: string; fullText: string; summary: string; url: string; };
+    explanation: { simple: string; realLifeImpact: string; };
 }
 
 interface Props {
     overallScore: number;
     riskLevel: string;
-    breakdown: RiskBreakdown;
+    breakdown: { CRITICAL: number; HIGH: number; MEDIUM: number; LOW: number; };
     violations: Violation[];
     deviations: any[];
     onJumpToClause: (clauseId: number) => void;
     highlightedViolationId?: number;
 }
 
-export default function AnalysisPanel({
-    overallScore,
-    riskLevel,
-    breakdown,
-    violations,
-    deviations,
-    onJumpToClause,
-    highlightedViolationId
-}: Props) {
+export default function AnalysisPanel({ overallScore, riskLevel, breakdown, violations, deviations, onJumpToClause, highlightedViolationId }: Props) {
     const violationRefs = useRef<{ [key: number]: HTMLElement }>({});
 
-    // Scroll to violation when triggered externally
     useEffect(() => {
         if (highlightedViolationId !== undefined && violationRefs.current[highlightedViolationId]) {
-            violationRefs.current[highlightedViolationId].scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
+            violationRefs.current[highlightedViolationId].scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }, [highlightedViolationId]);
 
     const totalIssues = violations.length + deviations.length;
 
+    const getScoreColor = () => {
+        if (overallScore >= 70) return 'text-red-600';
+        if (overallScore >= 40) return 'text-orange-600';
+        if (overallScore >= 20) return 'text-yellow-600';
+        return 'text-green-600';
+    };
+
     return (
-        <div className="p-6 space-y-6">
-            {/* Sticky Header with Score */}
-            <div className="sticky top-0 bg-gray-50 z-10 pb-4 -mx-6 px-6 pt-2 border-b border-gray-200">
-                <RiskScoreMeter
-                    score={overallScore}
-                    level={riskLevel}
-                    breakdown={breakdown}
-                />
+        <div className="p-6 space-y-6 bg-neutral-50 min-h-full">
+            {/* Score Card */}
+            <Card>
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-neutral-500 uppercase tracking-wide">Risk Assessment</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-baseline gap-2">
+                        <span className={`text-4xl font-bold ${getScoreColor()}`}>{overallScore}</span>
+                        <span className="text-lg text-neutral-400">/ 100</span>
+                    </div>
+                    <Progress value={overallScore} className="h-2" />
+                    <div className="flex flex-wrap gap-x-4 gap-y-2">
+                        {breakdown.CRITICAL > 0 && (
+                            <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                                <span className="text-sm"><span className="font-medium">{breakdown.CRITICAL}</span> <span className="text-neutral-500">critical</span></span>
+                            </div>
+                        )}
+                        {breakdown.HIGH > 0 && (
+                            <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                                <span className="text-sm"><span className="font-medium">{breakdown.HIGH}</span> <span className="text-neutral-500">high</span></span>
+                            </div>
+                        )}
+                        {breakdown.MEDIUM > 0 && (
+                            <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+                                <span className="text-sm"><span className="font-medium">{breakdown.MEDIUM}</span> <span className="text-neutral-500">medium</span></span>
+                            </div>
+                        )}
+                        {breakdown.LOW > 0 && (
+                            <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                                <span className="text-sm"><span className="font-medium">{breakdown.LOW}</span> <span className="text-neutral-500">low</span></span>
+                            </div>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
 
-                {/* Quick Stats */}
-                <div className="grid grid-cols-4 gap-2 mt-4">
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-2 text-center">
-                        <span className="text-xl font-bold text-red-600">{breakdown.CRITICAL}</span>
-                        <p className="text-xs text-red-700">Critical</p>
-                    </div>
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-center">
-                        <span className="text-xl font-bold text-orange-600">{breakdown.HIGH}</span>
-                        <p className="text-xs text-orange-700">High</p>
-                    </div>
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2  text-center">
-                        <span className="text-xl font-bold text-yellow-600">{breakdown.MEDIUM}</span>
-                        <p className="text-xs text-yellow-700">Medium</p>
-                    </div>
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-center">
-                        <span className="text-xl font-bold text-blue-600">{breakdown.LOW}</span>
-                        <p className="text-xs text-blue-700">Low</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* No Issues State */}
+            {/* No Issues */}
             {totalIssues === 0 && (
-                <div className="text-center py-12">
-                    <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                        <CheckCircle className="h-8 w-8 text-green-600" />
-                    </div>
-                    <h3 className="text-xl font-bold text-green-800 mb-2">
-                        No Risky Clauses Found! 🎉
-                    </h3>
-                    <p className="text-gray-600 max-w-sm mx-auto">
-                        This contract appears to follow fair practices under Indian law.
-                        However, we still recommend a professional legal review.
-                    </p>
-                </div>
+                <Card>
+                    <CardContent className="p-8 text-center">
+                        <div className="w-14 h-14 mx-auto rounded-full bg-green-100 flex items-center justify-center mb-4">
+                            <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-semibold text-neutral-900 mb-2">All Clear!</h3>
+                        <p className="text-neutral-500 max-w-sm mx-auto">No significant issues found in this contract.</p>
+                    </CardContent>
+                </Card>
             )}
 
-            {/* Violations List */}
+            {/* Violations */}
             {violations.length > 0 && (
                 <div className="space-y-4">
-                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-red-500" />
-                        <span>Risky Clauses Found</span>
-                        <span className="text-sm font-normal text-gray-500 ml-1">
-                            ({violations.length} {violations.length === 1 ? 'issue' : 'issues'})
-                        </span>
-                    </h2>
-
-                    {violations.map((violation) => (
-                        <div
-                            key={violation.id}
-                            ref={(el) => { if (el) violationRefs.current[violation.id] = el; }}
-                            className="transition-all duration-300"
-                        >
-                            <ViolationCard
-                                violation={violation}
-                                onJumpToClause={() => onJumpToClause(violation.clauseNumber)}
-                                isHighlighted={highlightedViolationId === violation.clauseNumber}
-                            />
-                        </div>
-                    ))}
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-semibold text-neutral-900 uppercase tracking-wide">Issues Found</h2>
+                        <Badge variant="secondary">{violations.length}</Badge>
+                    </div>
+                    <div className="space-y-3">
+                        {violations.map((violation) => (
+                            <div key={violation.id} ref={(el) => { if (el) violationRefs.current[violation.id] = el; }}>
+                                <ViolationCard
+                                    violation={violation}
+                                    onJumpToClause={() => onJumpToClause(violation.clauseNumber)}
+                                    isHighlighted={highlightedViolationId === violation.clauseNumber}
+                                />
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 
-            {/* Deviations from Fair Contract */}
+            {/* Deviations */}
             {deviations.length > 0 && (
-                <div className="space-y-4 mt-8">
-                    <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-orange-500" />
-                        <span>Deviations from Fair Practice</span>
-                        <span className="text-sm font-normal text-gray-500 ml-1">
-                            ({deviations.length})
-                        </span>
-                    </h2>
-
-                    {deviations.map((deviation, idx) => (
-                        <div
-                            key={idx}
-                            className="bg-orange-50 border border-orange-200 rounded-lg p-4"
-                        >
-                            <div className="flex items-start justify-between mb-2">
-                                <h3 className="font-semibold text-orange-900">{deviation.category}</h3>
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${deviation.deviationLevel === 'EXTREME'
-                                        ? 'bg-red-200 text-red-800'
-                                        : 'bg-orange-200 text-orange-800'
-                                    }`}>
-                                    {deviation.deviationLevel}
-                                </span>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
-                                <div className="bg-white/50 rounded p-2">
-                                    <p className="text-gray-500 text-xs mb-1">Found in Contract</p>
-                                    <p className="text-orange-900 font-medium">{deviation.foundInContract}</p>
-                                </div>
-                                <div className="bg-white/50 rounded p-2">
-                                    <p className="text-gray-500 text-xs mb-1">Fair Standard</p>
-                                    <p className="text-green-800 font-medium">{deviation.fairStandard}</p>
-                                </div>
-                            </div>
-
-                            <p className="text-sm text-gray-700">{deviation.explanation}</p>
-                        </div>
-                    ))}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-sm font-semibold text-neutral-900 uppercase tracking-wide">Deviations</h2>
+                        <Badge variant="secondary">{deviations.length}</Badge>
+                    </div>
+                    <div className="space-y-3">
+                        {deviations.map((deviation, idx) => (
+                            <Card key={idx}>
+                                <CardContent className="p-4">
+                                    <div className="flex items-start justify-between gap-3 mb-3">
+                                        <h3 className="font-medium text-neutral-900">{deviation.category}</h3>
+                                        <Badge variant={deviation.deviationLevel === 'EXTREME' ? 'destructive' : 'default'}>
+                                            {deviation.deviationLevel}
+                                        </Badge>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                        <div className="bg-neutral-50 rounded-lg p-3 border">
+                                            <p className="text-xs text-neutral-500 mb-1">Found</p>
+                                            <p className="text-sm text-neutral-900">{deviation.foundInContract}</p>
+                                        </div>
+                                        <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                                            <p className="text-xs text-neutral-500 mb-1">Standard</p>
+                                            <p className="text-sm text-neutral-900">{deviation.fairStandard}</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-neutral-600">{deviation.explanation}</p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
                 </div>
             )}
 
-            {/* Bottom Disclaimer */}
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-8">
-                <p className="text-xs text-amber-800 leading-relaxed">
-                    <strong>⚖️ Legal Disclaimer:</strong> This analysis is for educational purposes only
-                    and does not constitute legal advice. The detection of risky clauses is based on
-                    pattern matching against the Indian Contract Act, 1872. Always consult a qualified
-                    lawyer before signing any contract or making legal decisions.
-                </p>
-            </div>
+            {/* Disclaimer */}
+            <Separator />
+            <p className="text-xs text-neutral-400 leading-relaxed">
+                ⚠️ This is an educational tool only and not a substitute for professional legal advice.
+            </p>
         </div>
     );
 }

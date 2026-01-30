@@ -1,89 +1,86 @@
 'use client';
 
-import { AlertTriangle, Shield, AlertCircle } from 'lucide-react';
-
 interface Props {
     score: number;
     level: string;
-    breakdown: {
-        CRITICAL: number;
-        HIGH: number;
-        MEDIUM: number;
-        LOW: number;
-    };
+    breakdown: { CRITICAL: number; HIGH: number; MEDIUM: number; LOW: number; };
 }
 
 export default function RiskScoreMeter({ score, level, breakdown }: Props) {
-    const getColor = () => {
-        if (score >= 76) return 'text-red-600 bg-red-50 border-red-300';
-        if (score >= 51) return 'text-orange-600 bg-orange-50 border-orange-300';
-        if (score >= 26) return 'text-yellow-600 bg-yellow-50 border-yellow-300';
-        return 'text-green-600 bg-green-50 border-green-300';
+    const getScoreColor = () => {
+        if (score >= 70) return 'text-[#C53030]';
+        if (score >= 40) return 'text-[#DD6B20]';
+        if (score >= 20) return 'text-[#D69E2E]';
+        return 'text-[#38A169]';
     };
 
-    const getIcon = () => {
-        if (score >= 76) return <AlertTriangle className="h-12 w-12" />;
-        if (score >= 51) return <AlertCircle className="h-12 w-12" />;
-        return <Shield className="h-12 w-12" />;
+    const getBarColor = () => {
+        if (score >= 70) return 'bg-[#C53030]';
+        if (score >= 40) return 'bg-[#DD6B20]';
+        if (score >= 20) return 'bg-[#D69E2E]';
+        return 'bg-[#38A169]';
+    };
+
+    const getGradient = () => {
+        if (score >= 70) return 'from-[#C53030] to-[#E53E3E]';
+        if (score >= 40) return 'from-[#DD6B20] to-[#ED8936]';
+        if (score >= 20) return 'from-[#D69E2E] to-[#ECC94B]';
+        return 'from-[#38A169] to-[#48BB78]';
     };
 
     return (
-        <div className={`rounded-lg border-2 p-8 ${getColor()}`}>
-            <div className="flex items-center gap-4">
-                {getIcon()}
-                <div className="flex-1">
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold">{score}</span>
-                        <span className="text-2xl">/100</span>
-                    </div>
-                    <p className="text-xl font-semibold mt-1">{level}</p>
-                </div>
+        <div className="space-y-6">
+            {/* Score Display */}
+            <div className="flex items-end gap-2">
+                <span className={`text-5xl font-bold tracking-tight ${getScoreColor()}`}>{score}</span>
+                <span className="text-xl text-[#8A857E] mb-1.5">/ 100</span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="h-3 bg-[#EDE9E3] rounded-full overflow-hidden">
+                <div
+                    className={`h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r ${getGradient()}`}
+                    style={{ width: `${score}%` }}
+                />
             </div>
 
             {/* Breakdown */}
-            <div className="mt-6 grid grid-cols-4 gap-4">
-                <div className="text-center">
-                    <div className="text-3xl font-bold text-red-600">{breakdown.CRITICAL}</div>
-                    <div className="text-xs uppercase tracking-wide mt-1">Critical</div>
-                </div>
-                <div className="text-center">
-                    <div className="text-3xl font-bold text-orange-600">{breakdown.HIGH}</div>
-                    <div className="text-xs uppercase tracking-wide mt-1">High</div>
-                </div>
-                <div className="text-center">
-                    <div className="text-3xl font-bold text-yellow-600">{breakdown.MEDIUM}</div>
-                    <div className="text-xs uppercase tracking-wide mt-1">Medium</div>
-                </div>
-                <div className="text-center">
-                    <div className="text-3xl font-bold text-gray-600">{breakdown.LOW}</div>
-                    <div className="text-xs uppercase tracking-wide mt-1">Low</div>
-                </div>
-            </div>
-
-            {/* Interpretation */}
-            <div className="mt-6 pt-6 border-t border-current border-opacity-20">
-                {score >= 76 && (
-                    <p className="font-medium">
-                        ⚠️ This contract has SEVERE issues. Contains clauses that violate Indian law.
-                        <strong> DO NOT SIGN</strong> without legal review.
-                    </p>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+                {breakdown.CRITICAL > 0 && (
+                    <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#C53030]" />
+                        <span className="text-sm">
+                            <span className="font-semibold text-[#1A1815]">{breakdown.CRITICAL}</span>
+                            <span className="text-[#8A857E] ml-1">critical</span>
+                        </span>
+                    </div>
                 )}
-                {score >= 51 && score < 76 && (
-                    <p className="font-medium">
-                        ⚠️ This contract has significant risks. Several clauses may be unenforceable
-                        or unfair. Negotiate before signing.
-                    </p>
+                {breakdown.HIGH > 0 && (
+                    <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#DD6B20]" />
+                        <span className="text-sm">
+                            <span className="font-semibold text-[#1A1815]">{breakdown.HIGH}</span>
+                            <span className="text-[#8A857E] ml-1">high</span>
+                        </span>
+                    </div>
                 )}
-                {score >= 26 && score < 51 && (
-                    <p className="font-medium">
-                        ⚠️ This contract has moderate risks. Some clauses need attention, but
-                        may be negotiable.
-                    </p>
+                {breakdown.MEDIUM > 0 && (
+                    <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#D69E2E]" />
+                        <span className="text-sm">
+                            <span className="font-semibold text-[#1A1815]">{breakdown.MEDIUM}</span>
+                            <span className="text-[#8A857E] ml-1">medium</span>
+                        </span>
+                    </div>
                 )}
-                {score < 26 && (
-                    <p className="font-medium">
-                        ✅ This contract appears relatively fair, but still review carefully.
-                    </p>
+                {breakdown.LOW > 0 && (
+                    <div className="flex items-center gap-2">
+                        <span className="w-3 h-3 rounded-full bg-[#3182CE]" />
+                        <span className="text-sm">
+                            <span className="font-semibold text-[#1A1815]">{breakdown.LOW}</span>
+                            <span className="text-[#8A857E] ml-1">low</span>
+                        </span>
+                    </div>
                 )}
             </div>
         </div>

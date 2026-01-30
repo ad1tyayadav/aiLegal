@@ -1,9 +1,17 @@
 'use client';
 
-export function Spinner({ className = '' }: { className?: string }) {
+interface Props {
+    className?: string;
+}
+
+export function Spinner({ className = '' }: Props) {
     return (
-        <div className={`inline-block ${className}`}>
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div
+            className={`animate-spin rounded-full border-2 border-current border-t-transparent ${className}`}
+            role="status"
+            aria-label="Loading"
+        >
+            <span className="sr-only">Loading...</span>
         </div>
     );
 }
