@@ -11,6 +11,9 @@ import SplitScreenLayout from '@/components/layout/SplitScreenLayout';
 import ContractViewer from '@/components/contract/ContractViewer';
 import AnalysisPanel from '@/components/analysis/AnalysisPanel';
 import EmailDialog from '@/components/email/EmailDialog';
+import { saveAnalysis } from '@/app/actions/analysis.actions';
+import { useAuth } from '@clerk/nextjs';
+import { Save, Check, Loader2 } from 'lucide-react';
 
 const STORAGE_KEY = 'andhakanoon_analysis_result';
 
@@ -45,10 +48,14 @@ interface AnalysisResult {
 
 export default function ResultPage() {
     const router = useRouter();
+    const { isSignedIn, userId } = useAuth();
     const [results, setResults] = useState<AnalysisResult | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [highlightedClauseId, setHighlightedClauseId] = useState<number | undefined>();
     const [highlightedViolationId, setHighlightedViolationId] = useState<number | undefined>();
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+    const [saveError, setSaveError] = useState<string | null>(null);
 
     useEffect(() => {
         try {
@@ -78,6 +85,35 @@ export default function ResultPage() {
     const handleNewAnalysis = () => {
         try { localStorage.removeItem(STORAGE_KEY); } catch (err) { }
         router.push('/');
+    };
+
+    const handleSave = async () => {
+        if (!results || !isSignedIn) return;
+
+        setIsSaving(true);
+        setSaveError(null);
+
+        try {
+            const result = await saveAnalysis({
+                documentName: results.document.fileName,
+                contentText: results.document.extractedText,
+                analysisJson: results,
+                riskScore: results.analysis.overallRiskScore,
+                tags: Object.entries(results.analysis.breakdown)
+                    .filter(([_, count]) => count > 0)
+                    .map(([level]) => level)
+            });
+
+            if (result.success) {
+                setIsSaved(true);
+            } else {
+                setSaveError(result.error || 'Failed to save');
+            }
+        } catch (error: any) {
+            setSaveError(error.message || 'Failed to save');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     if (isLoading) {
@@ -164,6 +200,26 @@ export default function ResultPage() {
 
                     {/* Right: Actions */}
                     <div className="flex items-center gap-3">
+                        {/* Save to Dashboard - Only for logged in users */}
+                        {isSignedIn && (
+                            <Button
+                                variant={isSaved ? "secondary" : "default"}
+                                size="sm"
+                                className="gap-2"
+                                onClick={handleSave}
+                                disabled={isSaving || isSaved}
+                            >
+                                {isSaving ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : isSaved ? (
+                                    <Check className="w-4 h-4" />
+                                ) : (
+                                    <Save className="w-4 h-4" />
+                                )}
+                                {isSaved ? 'Saved!' : 'Save to Dashboard'}
+                            </Button>
+                        )}
+
                         <Button
                             variant="outline"
                             size="sm"
