@@ -43,6 +43,11 @@ export default function Navbar() {
                             {item}
                         </Link>
                     ))}
+                    <Link href="/create-contract">
+                        <Button variant="outline" className="font-medium px-4">
+                            Create Contract
+                        </Button>
+                    </Link>
                     <Button className="font-medium px-6">
                         Get Started
                     </Button>

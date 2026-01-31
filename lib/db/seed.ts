@@ -29,6 +29,12 @@ export async function seedDatabase() {
     // 4. Seed explanation templates
     seedExplanationTemplates();
 
+    // 5. Seed clause library for contract drafting
+    seedClauseLibrary();
+
+    // 6. Seed contract templates
+    seedContractTemplates();
+
     console.log('✅ Database seeded successfully');
 }
 
@@ -358,6 +364,357 @@ function seedExplanationTemplates() {
     }
 
     console.log(`✅ Seeded ${templates.length} explanation templates`);
+}
+
+function seedClauseLibrary() {
+    const clauses = [
+        // NDA / Confidentiality
+        {
+            category: 'Confidentiality',
+            title: 'Standard NDA Clause',
+            text: `The Receiving Party agrees to hold in confidence all Confidential Information disclosed by the Disclosing Party. "Confidential Information" means any non-public information, technical data, or know-how, including research, product plans, services, customers, markets, software, developments, inventions, processes, formulas, technology, designs, drawings, engineering, hardware configuration information, marketing, finances, or other business information disclosed by the Disclosing Party.`,
+            description: 'Basic mutual confidentiality clause'
+        },
+        {
+            category: 'Confidentiality',
+            title: 'Limited Confidentiality (1 Year)',
+            text: `The Receiving Party shall maintain the confidentiality of all Confidential Information for a period of one (1) year from the date of disclosure. After this period, the Receiving Party shall be free to use or disclose such information without restriction.`,
+            description: 'Time-limited confidentiality clause'
+        },
+        // Payment Terms
+        {
+            category: 'Payment',
+            title: 'Net 30 Payment Terms',
+            text: `All invoices shall be paid within thirty (30) days of receipt. Late payments shall accrue interest at the rate of 1.5% per month or the maximum rate permitted by law, whichever is lower.`,
+            description: 'Standard 30-day payment with late fee'
+        },
+        {
+            category: 'Payment',
+            title: 'Milestone-Based Payment',
+            text: `Payment shall be made according to the following schedule: 30% upon signing, 30% upon completion of the first milestone, and 40% upon final delivery and acceptance. Each payment is due within 15 days of the associated milestone.`,
+            description: 'Split payment tied to project milestones'
+        },
+        // Intellectual Property
+        {
+            category: 'IP',
+            title: 'Work-for-Hire IP Assignment',
+            text: `Upon full payment, all intellectual property rights in the Deliverables shall be assigned to the Client. The Contractor retains the right to use the work in their portfolio for promotional purposes.`,
+            description: 'IP transfers on payment, portfolio rights retained'
+        },
+        {
+            category: 'IP',
+            title: 'License Grant (Non-Exclusive)',
+            text: `The Contractor grants the Client a perpetual, irrevocable, non-exclusive license to use the Deliverables. The Contractor retains ownership and may license the work to other parties.`,
+            description: 'Client gets license, contractor keeps ownership'
+        },
+        // Termination
+        {
+            category: 'Termination',
+            title: '30-Day Termination Notice',
+            text: `Either party may terminate this Agreement with thirty (30) days written notice. Upon termination, the Client shall pay for all work completed up to the termination date.`,
+            description: 'Mutual termination with fair notice'
+        },
+        {
+            category: 'Termination',
+            title: 'Termination for Cause',
+            text: `Either party may terminate this Agreement immediately upon written notice if the other party materially breaches this Agreement and fails to cure such breach within fifteen (15) days of receiving written notice of the breach.`,
+            description: 'Immediate termination for uncured breaches'
+        },
+        // Dispute Resolution
+        {
+            category: 'Dispute',
+            title: 'Mediation First',
+            text: `In the event of any dispute arising out of or relating to this Agreement, the parties shall first attempt to resolve the dispute through good-faith mediation. If mediation fails within 30 days, either party may pursue arbitration or litigation.`,
+            description: 'Requires mediation attempt before court'
+        },
+        {
+            category: 'Dispute',
+            title: 'Indian Jurisdiction',
+            text: `This Agreement shall be governed by and construed in accordance with the laws of India. Any disputes arising under this Agreement shall be subject to the exclusive jurisdiction of the courts of [City], India.`,
+            description: 'Keeps disputes in Indian courts'
+        },
+        // Indemnification
+        {
+            category: 'Indemnity',
+            title: 'Mutual Indemnification',
+            text: `Each party shall indemnify and hold harmless the other party from any claims, damages, or expenses arising from the indemnifying party's breach of this Agreement or negligent acts.`,
+            description: 'Both parties protected equally'
+        }
+    ];
+
+    const insert = db.prepare(`
+        INSERT OR IGNORE INTO clause_library 
+        (category, title, text, description, is_default)
+        VALUES (?, ?, ?, ?, 1)
+    `);
+
+    for (const clause of clauses) {
+        insert.run(clause.category, clause.title, clause.text, clause.description);
+    }
+
+    console.log(`✅ Seeded ${clauses.length} clause library entries`);
+}
+
+function seedContractTemplates() {
+    const templates = [
+        {
+            id: 'tmpl-freelance-web',
+            title: 'Freelance Web Development Agreement',
+            description: 'Standard contract for freelance web development projects',
+            category: 'freelance',
+            default_content: `# FREELANCE WEB DEVELOPMENT AGREEMENT
+
+**Date:** {{DATE}}
+
+## PARTIES
+
+**Client:** {{CLIENT_NAME}}
+**Address:** {{CLIENT_ADDRESS}}
+
+**Contractor:** {{CONTRACTOR_NAME}}
+**Address:** {{CONTRACTOR_ADDRESS}}
+
+---
+
+## 1. SCOPE OF WORK
+
+The Contractor agrees to provide the following services:
+
+{{SCOPE_DESCRIPTION}}
+
+### Deliverables:
+- {{DELIVERABLE_1}}
+- {{DELIVERABLE_2}}
+- {{DELIVERABLE_3}}
+
+---
+
+## 2. TIMELINE
+
+**Project Start Date:** {{START_DATE}}
+**Expected Completion:** {{END_DATE}}
+
+---
+
+## 3. COMPENSATION
+
+**Total Fee:** ₹{{TOTAL_FEE}}
+
+**Payment Schedule:**
+- {{PAYMENT_SCHEDULE}}
+
+---
+
+## 4. INTELLECTUAL PROPERTY
+
+Upon full payment, all intellectual property rights in the Deliverables shall be assigned to the Client. The Contractor retains the right to use the work in their portfolio.
+
+---
+
+## 5. CONFIDENTIALITY
+
+Both parties agree to keep confidential any proprietary information shared during this engagement.
+
+---
+
+## 6. TERMINATION
+
+Either party may terminate this Agreement with 15 days written notice. Upon termination, the Client shall pay for all work completed.
+
+---
+
+## 7. GOVERNING LAW
+
+This Agreement shall be governed by the laws of India.
+
+---
+
+## SIGNATURES
+
+**Client:**
+_________________________
+Name: {{CLIENT_NAME}}
+Date: {{SIGNATURE_DATE}}
+
+**Contractor:**
+_________________________
+Name: {{CONTRACTOR_NAME}}
+Date: {{SIGNATURE_DATE}}
+`
+        },
+        {
+            id: 'tmpl-nda-mutual',
+            title: 'Mutual Non-Disclosure Agreement',
+            description: 'Standard NDA for protecting confidential information',
+            category: 'nda',
+            default_content: `# MUTUAL NON-DISCLOSURE AGREEMENT
+
+**Effective Date:** {{DATE}}
+
+## PARTIES
+
+**Party A:** {{PARTY_A_NAME}}
+**Party B:** {{PARTY_B_NAME}}
+
+---
+
+## 1. PURPOSE
+
+The parties wish to explore a potential business relationship and, in connection with this, may disclose confidential information to each other.
+
+---
+
+## 2. DEFINITION OF CONFIDENTIAL INFORMATION
+
+"Confidential Information" means any non-public information, technical data, trade secrets, or know-how, including research, product plans, products, services, customer lists, markets, software, developments, inventions, processes, formulas, technology, designs, drawings, engineering, marketing, finances, or other business information.
+
+---
+
+## 3. OBLIGATIONS
+
+Each party agrees to:
+- Hold the other party's Confidential Information in strict confidence
+- Not disclose to any third party without prior written consent
+- Use the information only for the stated purpose
+- Protect information using reasonable security measures
+
+---
+
+## 4. EXCLUSIONS
+
+This Agreement does not apply to information that:
+- Was publicly known at the time of disclosure
+- Becomes publicly known through no fault of the receiving party
+- Was already known to the receiving party
+- Is independently developed by the receiving party
+
+---
+
+## 5. TERM
+
+This Agreement shall remain in effect for {{DURATION}} from the Effective Date.
+
+---
+
+## 6. GOVERNING LAW
+
+This Agreement shall be governed by the laws of India.
+
+---
+
+## SIGNATURES
+
+**Party A:**
+_________________________
+Name: {{PARTY_A_NAME}}
+Date: {{SIGNATURE_DATE}}
+
+**Party B:**
+_________________________
+Name: {{PARTY_B_NAME}}
+Date: {{SIGNATURE_DATE}}
+`
+        },
+        {
+            id: 'tmpl-intern-onboarding',
+            title: 'Intern Onboarding Agreement',
+            description: 'Agreement for hiring interns with learning objectives',
+            category: 'employment',
+            default_content: `# INTERNSHIP AGREEMENT
+
+**Date:** {{DATE}}
+
+## PARTIES
+
+**Company:** {{COMPANY_NAME}}
+**Address:** {{COMPANY_ADDRESS}}
+
+**Intern:** {{INTERN_NAME}}
+**Address:** {{INTERN_ADDRESS}}
+
+---
+
+## 1. INTERNSHIP DETAILS
+
+**Position:** {{POSITION_TITLE}}
+**Department:** {{DEPARTMENT}}
+**Duration:** {{START_DATE}} to {{END_DATE}}
+**Working Hours:** {{WORKING_HOURS}}
+
+---
+
+## 2. STIPEND
+
+**Monthly Stipend:** ₹{{STIPEND_AMOUNT}}
+
+Payment shall be made on the {{PAYMENT_DAY}} of each month.
+
+---
+
+## 3. LEARNING OBJECTIVES
+
+The internship is designed to provide practical experience in:
+- {{OBJECTIVE_1}}
+- {{OBJECTIVE_2}}
+- {{OBJECTIVE_3}}
+
+---
+
+## 4. RESPONSIBILITIES
+
+The Intern agrees to:
+- Follow company policies and procedures
+- Complete assigned tasks diligently
+- Maintain confidentiality of company information
+- Report to {{SUPERVISOR_NAME}}
+
+---
+
+## 5. INTELLECTUAL PROPERTY
+
+Any work product created during the internship shall belong to the Company.
+
+---
+
+## 6. TERMINATION
+
+Either party may terminate this agreement with 7 days written notice.
+
+---
+
+## 7. CERTIFICATE
+
+Upon successful completion, the Company shall issue an internship completion certificate.
+
+---
+
+## SIGNATURES
+
+**For Company:**
+_________________________
+Name: {{AUTHORIZED_SIGNATORY}}
+Designation: {{SIGNATORY_DESIGNATION}}
+Date: {{SIGNATURE_DATE}}
+
+**Intern:**
+_________________________
+Name: {{INTERN_NAME}}
+Date: {{SIGNATURE_DATE}}
+`
+        }
+    ];
+
+    const insert = db.prepare(`
+        INSERT OR REPLACE INTO contract_templates 
+        (id, title, description, default_content, category)
+        VALUES (?, ?, ?, ?, ?)
+    `);
+
+    for (const template of templates) {
+        insert.run(template.id, template.title, template.description, template.default_content, template.category);
+    }
+
+    console.log(`✅ Seeded ${templates.length} contract templates`);
 }
 
 // Run seed if called directly

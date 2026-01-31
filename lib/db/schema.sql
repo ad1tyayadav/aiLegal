@@ -75,3 +75,56 @@ CREATE INDEX IF NOT EXISTS idx_section_number ON act_sections(section_number);
 CREATE INDEX IF NOT EXISTS idx_clause_type ON clause_patterns(clause_type);
 CREATE INDEX IF NOT EXISTS idx_risk_level ON clause_patterns(risk_level);
 CREATE INDEX IF NOT EXISTS idx_embeddings_section ON act_embeddings(section_number);
+
+-- =====================================================
+-- CONTRACT DRAFTING FEATURE
+-- =====================================================
+
+-- User-created contracts (drafts and final)
+CREATE TABLE IF NOT EXISTS contracts (
+  id TEXT PRIMARY KEY,                    -- UUID
+  user_id TEXT NOT NULL DEFAULT 'default',-- Owner (future auth)
+  title TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'draft',   -- 'draft', 'final'
+  content TEXT NOT NULL,                  -- Contract text (markdown/HTML)
+  template_id TEXT,                       -- FK to contract_templates (if based on template)
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User signatures (stored as base64 images)
+CREATE TABLE IF NOT EXISTS signatures (
+  id TEXT PRIMARY KEY,                    -- UUID
+  user_id TEXT NOT NULL DEFAULT 'default',
+  label TEXT NOT NULL,                    -- e.g., 'My Signature', 'Company Seal'
+  image_data TEXT NOT NULL,               -- Base64 encoded image (PNG)
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Pre-defined clause library (for users to add to contracts)
+CREATE TABLE IF NOT EXISTS clause_library (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category TEXT NOT NULL,                 -- 'NDA', 'Payment', 'Termination', 'IP', etc.
+  title TEXT NOT NULL,
+  text TEXT NOT NULL,                     -- Clause content
+  description TEXT,                       -- Short description
+  is_default INTEGER DEFAULT 1           -- 1 = show by default
+);
+
+-- Contract templates (starting points for users)
+CREATE TABLE IF NOT EXISTS contract_templates (
+  id TEXT PRIMARY KEY,                    -- UUID
+  title TEXT NOT NULL,                    -- 'Freelance Agreement', 'NDA', etc.
+  description TEXT,
+  default_content TEXT NOT NULL,          -- Template with placeholders like {{PARTY_A}}
+  category TEXT NOT NULL DEFAULT 'general', -- 'freelance', 'employment', 'nda', etc.
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for new tables
+CREATE INDEX IF NOT EXISTS idx_contracts_user ON contracts(user_id);
+CREATE INDEX IF NOT EXISTS idx_contracts_status ON contracts(status);
+CREATE INDEX IF NOT EXISTS idx_signatures_user ON signatures(user_id);
+CREATE INDEX IF NOT EXISTS idx_clause_library_category ON clause_library(category);
+CREATE INDEX IF NOT EXISTS idx_templates_category ON contract_templates(category);
+
