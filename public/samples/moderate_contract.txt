@@ -1,0 +1,68 @@
+FREELANCE WEB DEVELOPMENT AGREEMENT
+
+Date: January 31, 2026
+
+BETWEEN:
+TechStartup Solutions Pvt. Ltd. ("Client")
+AND:
+[Freelancer Name] ("Contractor")
+
+---
+
+1. SCOPE OF WORK
+
+The Contractor agrees to develop a responsive e-commerce website for the Client including frontend, backend, and admin dashboard.
+
+2. PROJECT TIMELINE
+
+Start Date: February 1, 2026
+Expected Completion: March 31, 2026
+Timeline extensions require mutual written agreement.
+
+3. COMPENSATION
+
+Total Project Fee: ₹2,50,000
+
+Payment Schedule:
+- 25% upon signing (advance)
+- 25% upon first milestone
+- 25% upon second milestone
+- 25% upon final delivery
+
+Payment shall be made within 15 days of invoice submission.
+
+4. INTELLECTUAL PROPERTY
+
+All work product created by the Contractor under this project shall become the property of the Client upon full payment. Contractor retains rights to use samples in portfolio.
+
+5. CONFIDENTIALITY
+
+The Contractor agrees to keep all business information confidential for 2 years after project completion.
+
+6. LIMITATION OF LIABILITY
+
+Any liability arising from this engagement shall be limited to the total fees paid under this contract.
+
+7. TERMINATION
+
+Either party may terminate this agreement with 30 days written notice. Upon termination by Client without cause, Client shall pay for all work completed plus 15% of remaining fee.
+
+8. PENALTY FOR DELAYS
+
+If Contractor fails to deliver milestones on schedule without valid reason, a penalty of ₹10,000 per week may apply as liquidated damages, capped at 20% of total project value.
+
+9. DISPUTE RESOLUTION
+
+Any disputes shall be resolved through mediation in Bangalore. If mediation fails, the matter shall proceed to arbitration under the Arbitration and Conciliation Act, 1996.
+
+10. GOVERNING LAW
+
+This Agreement shall be governed by the laws of India. Courts in Bangalore shall have jurisdiction.
+
+---
+
+SIGNATURES
+
+Client: ___________________________
+Contractor: ___________________________
+Date: ___________________________
