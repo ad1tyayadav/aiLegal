@@ -2,10 +2,12 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getExplanationTemplate } from '../db/queries';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+// Define models to try in order of preference
+const MODELS = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.5-pro-latest'];
 
 /**
- * Generate role-based explanations using Gemini API
+ * Generate role-based explanations using Gemini API with fallback models
  * Returns BOTH freelancer and company perspectives in one call
  */
 export async function explainClause(
@@ -21,8 +23,7 @@ export async function explainClause(
     const template = getExplanationTemplate(clauseType) as any;
 
     if (!template) {
-        // Fallback if no template
-        return generateWithoutTemplate(clauseText, indianLawSectionText, language);
+        return generateWithRetry(clauseText, indianLawSectionText, language);
     }
 
     const prompt = `
@@ -76,42 +77,14 @@ Return JSON:
 }
 `;
 
-    try {
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-
-        // Extract JSON (handle markdown code blocks)
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            throw new Error('Invalid Gemini response format');
-        }
-
-        return JSON.parse(jsonMatch[0]);
-    } catch (error) {
-        console.error('Gemini API error:', error);
-        // Fallback to template if AI fails
-        return {
-            freelancer: {
-                simpleExplanation: template.base_explanation_en,
-                realLifeImpact: template.real_life_impact_en
-            },
-            company: {
-                simpleExplanation: 'This clause may expose the company to legal challenges.',
-                realLifeImpact: 'Consider reviewing with legal counsel before enforcement.'
-            }
-        };
-    }
+    return executeExplanation(prompt, template, clauseText);
 }
 
-
-async function generateWithoutTemplate(
+async function generateWithRetry(
     clauseText: string,
     indianLawSection: string,
     language: 'en' | 'hi'
-): Promise<{
-    freelancer: { simpleExplanation: string; realLifeImpact: string; };
-    company: { simpleExplanation: string; realLifeImpact: string; };
-}> {
+) {
     const prompt = `
 You are a legal expert explaining contract clauses.
 
@@ -123,88 +96,141 @@ INDIAN LAW: ${indianLawSection.substring(0, 300)}
 Return ONLY valid JSON (no markdown, no code blocks):
 {
   "freelancer": {
-    "simpleExplanation": "2-3 sentences from worker's perspective",
+    "simpleExplanation": "2-3 sentences from worker's perspective about risks",
     "realLifeImpact": "Specific impact on their income/career"
   },
   "company": {
-    "simpleExplanation": "2-3 sentences from employer's perspective", 
+    "simpleExplanation": "2-3 sentences from employer's perspective about enforceability", 
     "realLifeImpact": "Specific business/legal risk"
   }
 }
 `;
 
-    try {
-        console.log(`[GEMINI] 🤖 Calling Gemini for clause explanation...`);
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-        console.log(`[GEMINI] 📝 Response received (${text.length} chars)`);
+    return executeExplanation(prompt, null, clauseText);
+}
 
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
+/**
+ * Execute generation with model fallback loop
+ */
+async function executeExplanation(prompt: string, template: any, clauseText: string) {
+    let lastError;
 
-        if (!jsonMatch) {
-            console.warn(`[GEMINI] ⚠️ No JSON found in response`);
-            throw new Error('No JSON in response');
+    for (const modelName of MODELS) {
+        try {
+            console.log(`[EXPLAINER] 🤖 Attempting explanation with ${modelName}...`);
+            const model = genAI.getGenerativeModel({ model: modelName });
+
+            const result = await model.generateContent(prompt);
+            const text = result.response.text();
+
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) {
+                throw new Error(`Invalid JSON from ${modelName}`);
+            }
+
+            const parsed = JSON.parse(jsonMatch[0]);
+
+            // Validate structure
+            if (!parsed.freelancer || !parsed.company) {
+                throw new Error('Incomplete JSON structure');
+            }
+
+            console.log(`[EXPLAINER] ✅ Success with ${modelName}`);
+            return parsed;
+
+        } catch (error: any) {
+            console.warn(`[EXPLAINER] ⚠️ ${modelName} failed:`, error.message);
+            lastError = error;
+            // Continue to next model
         }
+    }
 
-        const parsed = JSON.parse(jsonMatch[0]);
-        console.log(`[GEMINI] ✅ Successfully parsed explanation`);
-        return parsed;
+    console.error(`[EXPLAINER] ❌ All models failed. Using static fallback.`);
+    return getStaticFallback(clauseText, template);
+}
 
-    } catch (error: any) {
-        console.error(`[GEMINI] ❌ Error: ${error.message}`);
-
-        // Return clause-type-specific fallback based on clause content
-        const clauseLower = clauseText.toLowerCase();
-
-        if (clauseLower.includes('compete') || clauseLower.includes('competitor')) {
-            return {
-                freelancer: {
-                    simpleExplanation: 'This non-compete clause tries to stop you from working with competitors. Under Section 27 of Indian Contract Act, such restrictions are generally VOID.',
-                    realLifeImpact: 'Good news: You can likely work wherever you want after leaving. This clause is unenforceable in India.'
-                },
-                company: {
-                    simpleExplanation: 'This non-compete clause is void under Section 27 of Indian Contract Act 1872.',
-                    realLifeImpact: 'You cannot legally prevent employees from joining competitors in India.'
-                }
-            };
-        }
-
-        if (clauseLower.includes('intellectual property') || clauseLower.includes('invention') || clauseLower.includes(' ip ')) {
-            return {
-                freelancer: {
-                    simpleExplanation: 'This clause affects ownership of work you create. It may claim rights over your personal projects too.',
-                    realLifeImpact: 'Your side projects might belong to the company if this clause is too broad.'
-                },
-                company: {
-                    simpleExplanation: 'This IP assignment clause may be overly broad and face challenges.',
-                    realLifeImpact: 'Overly aggressive IP clauses can deter talent and create legal disputes.'
-                }
-            };
-        }
-
-        if (clauseLower.includes('termination') || clauseLower.includes('notice period')) {
-            return {
-                freelancer: {
-                    simpleExplanation: 'This termination clause may allow the company to end your contract with limited notice.',
-                    realLifeImpact: 'You may have less job security than expected. Check for mutual termination rights.'
-                },
-                company: {
-                    simpleExplanation: 'This termination clause should comply with applicable labor laws.',
-                    realLifeImpact: 'Improper termination procedures can lead to wrongful termination claims.'
-                }
-            };
-        }
-
-        // Generic fallback
+/**
+ * Enhanced static fallback when all AI fails
+ */
+function getStaticFallback(clauseText: string, template: any) {
+    // 1. Use template if available
+    if (template) {
         return {
             freelancer: {
-                simpleExplanation: 'This clause may affect your rights. Review it carefully before signing.',
-                realLifeImpact: 'Consider negotiating or seeking legal advice on unfavorable terms.'
+                simpleExplanation: template.base_explanation_en,
+                realLifeImpact: template.real_life_impact_en
             },
             company: {
-                simpleExplanation: 'This clause may have enforceability issues under Indian law.',
-                realLifeImpact: 'Consult legal counsel to ensure compliance and enforceability.'
+                simpleExplanation: 'This clause may expose the company to legal challenges.',
+                realLifeImpact: 'Consider reviewing with legal counsel before enforcement.'
             }
         };
     }
+
+    const clauseLower = clauseText.toLowerCase();
+
+    // 2. Keyword-based Smart Fallback (Pre-written "AI-like" responses)
+    if (clauseLower.includes('compete') || clauseLower.includes('competitor')) {
+        return {
+            freelancer: {
+                simpleExplanation: 'Non-compete clauses are generally void in India under Section 27 of the Contract Act.',
+                realLifeImpact: 'You likely cannot be legally forced to stop working for competitors after leaving.'
+            },
+            company: {
+                simpleExplanation: 'Restraint of trade clauses are void under Section 27 unless for sale of goodwill.',
+                realLifeImpact: 'Enforcing this against a former employee is legally difficult in India.'
+            }
+        };
+    }
+
+    if (clauseLower.includes('indemn') || clauseLower.includes('liability') || clauseLower.includes('liable')) {
+        return {
+            freelancer: {
+                simpleExplanation: 'Unlimited liability means you could be personally responsible for massive damages.',
+                realLifeImpact: 'This could put your personal assets at risk. Always ask for a liability cap.'
+            },
+            company: {
+                simpleExplanation: 'Demanding unlimited indemnity may be considered unconscionable.',
+                realLifeImpact: 'Courts may limit liability to reasonable foreseeability under Section 73.'
+            }
+        };
+    }
+
+    if (clauseLower.includes('terminate') || clauseLower.includes('notice')) {
+        return {
+            freelancer: {
+                simpleExplanation: 'Immediate termination without cause creates job insecurity.',
+                realLifeImpact: 'Ensure you have a reasonable notice period (e.g., 30 days) to find new work.'
+            },
+            company: {
+                simpleExplanation: 'Termination clauses must be fair and reciprocal to avoid disputes.',
+                realLifeImpact: 'Arbitrary termination can lead to wrongful termination claims.'
+            }
+        };
+    }
+
+    if (clauseLower.includes('penalty') || clauseLower.includes('damages')) {
+        return {
+            freelancer: {
+                simpleExplanation: 'Fixed penalties clearly exceeding actual loss may be void under Section 74.',
+                realLifeImpact: 'You should only be liable for actual proven losses, not arbitrary penalty amounts.'
+            },
+            company: {
+                simpleExplanation: 'Penalty clauses are only enforceable as reasonable compensation (Section 74).',
+                realLifeImpact: 'Exorbitant penalty amounts are likely to be struck down by courts.'
+            }
+        };
+    }
+
+    // 3. Generic Fallback (Last resort)
+    return {
+        freelancer: {
+            simpleExplanation: 'This clause contains legal obligations that affect your rights.',
+            realLifeImpact: 'Review this carefully. If it feels unfair, request a modification.'
+        },
+        company: {
+            simpleExplanation: 'This provision should be drafted carefully to ensure enforceability.',
+            realLifeImpact: 'Ambiguous or unfair terms may be ruled against the drafter (contra proferentem).'
+        }
+    };
 }
