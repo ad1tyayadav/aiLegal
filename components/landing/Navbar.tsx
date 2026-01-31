@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 
 export default function Navbar() {
     const [scrolled, setScrolled] = useState(false);
@@ -33,24 +34,40 @@ export default function Navbar() {
                     </span>
                 </Link>
 
-                <nav className="hidden md:flex items-center gap-8">
-                    {['Features', 'How it Works', 'Pricing'].map((item) => (
-                        <Link
-                            key={item}
-                            href={`#${item.toLowerCase().replace(/\s+/g, '-')}`}
-                            className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
-                        >
-                            {item}
+                <nav className="hidden md:flex items-center gap-6">
+                    <SignedIn>
+                        <Link href="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                            Dashboard
                         </Link>
-                    ))}
-                    <Link href="/create-contract">
-                        <Button variant="outline" className="font-medium px-4">
-                            Create Contract
-                        </Button>
-                    </Link>
-                    <Button className="font-medium px-6">
-                        Get Started
-                    </Button>
+                        <Link href="/compare" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                            Compare
+                        </Link>
+                        <Link href="/settings" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                            Settings
+                        </Link>
+                        <Link href="/create-contract">
+                            <Button variant="outline" className="h-9 px-4 font-medium">
+                                Create Contract
+                            </Button>
+                        </Link>
+                        <div className="ml-2">
+                            <UserButton afterSignOutUrl="/" />
+                        </div>
+                    </SignedIn>
+
+                    <SignedOut>
+                        <Link href="/#features" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                            Features
+                        </Link>
+                        <Link href="/#pricing" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                            Pricing
+                        </Link>
+                        <SignInButton mode="modal">
+                            <Button className="font-medium px-6">
+                                Sign In
+                            </Button>
+                        </SignInButton>
+                    </SignedOut>
                 </nav>
             </div>
         </header>

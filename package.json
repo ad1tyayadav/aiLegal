@@ -13,7 +13,9 @@
     "check-db": "tsx -e \"import { getDatabaseStats } from './lib/db/queries'; console.log(getDatabaseStats());\""
   },
   "dependencies": {
-    "@huggingface/inference": "^4.13.11",
+    "@clerk/nextjs": "^6.37.1",
+    "@google/generative-ai": "^0.21.0",
+    "@prisma/client": "5.11.0",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-progress": "^1.1.8",
     "@radix-ui/react-separator": "^1.1.8",
@@ -31,6 +33,7 @@
     "nodemailer": "^7.0.13",
     "pdf-parse": "^1.1.1",
     "postcss": "^8.5.6",
+    "prisma": "5.11.0",
     "puppeteer": "^24.36.1",
     "puppeteer-core": "^24.36.1",
     "react": "^19.0.0",

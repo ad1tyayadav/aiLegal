@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id // Clerk ID
+  email     String
+  role      String   @default("freelancer") // 'freelancer' | 'business'
+  createdAt DateTime @default(now())
+  analyses  SavedAnalysis[]
+}
+
+model SavedAnalysis {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  documentName String
+  contentText  String   @db.Text
+  analysisJson String   @db.Text // JSON string of results
+  riskScore    Int
+  tags         String[] // Array of strings
+  createdAt    DateTime @default(now())
+}

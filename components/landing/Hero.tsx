@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { FileText, PenLine } from 'lucide-react';
 import ContractUploader from '@/components/upload/ContractUploader';
+import { SignedIn, SignedOut, SignUpButton } from "@clerk/nextjs";
 
 interface HeroProps {
     onUpload: (file: File, language: 'en' | 'hi') => void;
@@ -71,14 +72,28 @@ export default function Hero({ onUpload, error, setError }: HeroProps) {
                         </div>
 
                         {/* Create Contract Button */}
-                        <Link
-                            href="/create-contract"
-                            className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-primary text-primary-foreground rounded-xl font-semibold shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all duration-200"
-                        >
-                            <PenLine className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                            <span>Create New Contract</span>
-                            <span className="text-xs px-2 py-0.5 bg-white/20 rounded-full">AI Draft</span>
-                        </Link>
+                        <div className="flex flex-col gap-4 w-full">
+                            {/* Sign Up / Get Started Button */}
+                            <SignedOut>
+                                <SignUpButton mode="modal">
+                                    <button className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-primary text-primary-foreground rounded-xl font-semibold shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all duration-200">
+                                        <PenLine className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                        <span>Start Free Analysis</span>
+                                        <span className="text-xs px-2 py-0.5 bg-white/20 rounded-full">Sign Up</span>
+                                    </button>
+                                </SignUpButton>
+                            </SignedOut>
+
+                            <SignedIn>
+                                <Link
+                                    href="/dashboard"
+                                    className="group flex items-center justify-center gap-3 w-full px-6 py-4 bg-primary text-primary-foreground rounded-xl font-semibold shadow-lg hover:shadow-xl hover:bg-primary/90 transition-all duration-200"
+                                >
+                                    <PenLine className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                                    <span>Go into Dashboard</span>
+                                </Link>
+                            </SignedIn>
+                        </div>
                         <p className="text-center text-xs text-muted-foreground mt-2">
                             Generate professional contracts with AI assistance
                         </p>
