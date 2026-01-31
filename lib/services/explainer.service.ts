@@ -5,8 +5,8 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
 /**
- * Generate ELI5 explanation using Gemini API
- * IMPORTANT: AI only explains, it does NOT decide legality (that's rule-based)
+ * Generate role-based explanations using Gemini API
+ * Returns BOTH freelancer and company perspectives in one call
  */
 export async function explainClause(
     clauseText: string,
@@ -14,8 +14,8 @@ export async function explainClause(
     indianLawSectionText: string,
     language: 'en' | 'hi' = 'en'
 ): Promise<{
-    simpleExplanation: string;
-    realLifeImpact: string;
+    freelancer: { simpleExplanation: string; realLifeImpact: string; };
+    company: { simpleExplanation: string; realLifeImpact: string; };
 }> {
     // Get template for consistency
     const template = getExplanationTemplate(clauseType) as any;
@@ -26,17 +26,17 @@ export async function explainClause(
     }
 
     const prompt = `
-You are explaining a legal contract clause to an Indian freelancer with NO legal background.
+You are explaining a legal contract clause from TWO different perspectives.
 
 CRITICAL CONTEXT:
 - This is for INDIAN law, NOT US law
-- Indian Contract Act, 1872 is different from US contracts law
-- Example: Non-compete clauses are VOID in India (Section 27) but may be valid in USA
+- Indian Contract Act, 1872 applies
+- Example: Non-compete clauses are VOID in India (Section 27)
 
 CLAUSE FROM CONTRACT:
 "${clauseText}"
 
-INDIAN LAW SECTION (from official 53-page PDF):
+INDIAN LAW SECTION:
 ${indianLawSectionText}
 
 TEMPLATE GUIDANCE:
@@ -45,21 +45,34 @@ Real-Life Impact: ${template.real_life_impact_en}
 Hint: ${template.gemini_prompt_hint}
 
 YOUR TASK:
-1. Write a simple explanation (2-3 sentences) in ${language === 'hi' ? 'Hindi' : 'English'}
-2. Describe real-life impact on Indian freelancer (2-3 sentences)
+Generate explanations for TWO audiences in ${language === 'hi' ? 'Hindi' : 'English'}:
+
+1. FREELANCER/EMPLOYEE perspective:
+   - Focus on: personal risk, income protection, career freedom
+   - Tone: protective, empathetic, actionable
+   - Example: "This could stop you from taking future clients..."
+
+2. COMPANY/EMPLOYER perspective:
+   - Focus on: enforceability risk, legal liability, business implications
+   - Tone: professional, pragmatic, strategic
+   - Example: "This clause may be unenforceable under Indian law..."
 
 RULES:
-- Use everyday language (explain like talking to a friend)
-- NO legal jargon (avoid words like "void ab initio", "consideration", "contra proferentem")
-- Be SPECIFIC about impact (not vague like "could cause issues")
+- Use everyday language (NO legal jargon)
+- Be SPECIFIC about impacts
 - Cite the Indian law section number
-- Do NOT use phrases from US law
-- Do NOT tell them to "consult a lawyer" (we know that already)
+- Keep each explanation to 2-3 sentences
 
-Format response as JSON:
+Return JSON:
 {
-  "simpleExplanation": "...",
-  "realLifeImpact": "..."
+  "freelancer": {
+    "simpleExplanation": "...",
+    "realLifeImpact": "..."
+  },
+  "company": {
+    "simpleExplanation": "...",
+    "realLifeImpact": "..."
+  }
 }
 `;
 
@@ -78,28 +91,43 @@ Format response as JSON:
         console.error('Gemini API error:', error);
         // Fallback to template if AI fails
         return {
-            simpleExplanation: template.base_explanation_en,
-            realLifeImpact: template.real_life_impact_en
+            freelancer: {
+                simpleExplanation: template.base_explanation_en,
+                realLifeImpact: template.real_life_impact_en
+            },
+            company: {
+                simpleExplanation: 'This clause may expose the company to legal challenges.',
+                realLifeImpact: 'Consider reviewing with legal counsel before enforcement.'
+            }
         };
     }
 }
+
 
 async function generateWithoutTemplate(
     clauseText: string,
     indianLawSection: string,
     language: 'en' | 'hi'
-): Promise<{ simpleExplanation: string; realLifeImpact: string }> {
+): Promise<{
+    freelancer: { simpleExplanation: string; realLifeImpact: string; };
+    company: { simpleExplanation: string; realLifeImpact: string; };
+}> {
     const prompt = `
-Explain this contract clause to an Indian freelancer in simple ${language === 'hi' ? 'Hindi' : 'English'}:
+Explain this contract clause from TWO perspectives in ${language === 'hi' ? 'Hindi' : 'English'}:
 
 CLAUSE: "${clauseText}"
-
 INDIAN LAW CONTEXT: ${indianLawSection}
 
-Return JSON:
+Return JSON with explanations for both FREELANCER and COMPANY:
 {
-  "simpleExplanation": "2-3 sentences in plain language",
-  "realLifeImpact": "Specific impact on freelancer's life/work"
+  "freelancer": {
+    "simpleExplanation": "2-3 sentences from worker's perspective",
+    "realLifeImpact": "Impact on their income/career"
+  },
+  "company": {
+    "simpleExplanation": "2-3 sentences from employer's perspective",
+    "realLifeImpact": "Impact on business/legal risk"
+  }
 }
 `;
 
@@ -115,8 +143,14 @@ Return JSON:
         return JSON.parse(jsonMatch[0]);
     } catch (error) {
         return {
-            simpleExplanation: 'This clause may be risky. Review carefully.',
-            realLifeImpact: 'Could affect your ability to work freely.'
+            freelancer: {
+                simpleExplanation: 'This clause may be risky. Review carefully.',
+                realLifeImpact: 'Could affect your ability to work freely.'
+            },
+            company: {
+                simpleExplanation: 'This clause may have enforceability issues.',
+                realLifeImpact: 'Consider legal review before relying on this provision.'
+            }
         };
     }
 }

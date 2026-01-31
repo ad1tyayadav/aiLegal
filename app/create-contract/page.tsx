@@ -89,8 +89,14 @@ export default function CreateContractPage() {
             if (data.success) {
                 setTitle(data.title);
                 setContent(data.content);
-                setSuccess('Contract generated successfully!');
-                setTimeout(() => setSuccess(null), 3000);
+
+                if (data.isFallback) {
+                    const fallbackName = data.title.includes('Draft') ? 'basic' : data.title;
+                    setError(`AI is busy (${data.error?.includes('429') ? 'Rate Limit' : 'Error'}). Switched to "${fallbackName}" template.`);
+                } else {
+                    setSuccess('Contract generated successfully!');
+                    setTimeout(() => setSuccess(null), 3000);
+                }
             } else {
                 setError(data.error || 'Failed to generate contract');
             }
@@ -290,8 +296,8 @@ export default function CreateContractPage() {
                                     <button
                                         onClick={() => setSelectedCategory(null)}
                                         className={`px-2 py-1 text-xs rounded-full transition-colors ${!selectedCategory
-                                                ? 'bg-primary text-primary-foreground'
-                                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                             }`}
                                     >
                                         All
@@ -301,8 +307,8 @@ export default function CreateContractPage() {
                                             key={cat}
                                             onClick={() => setSelectedCategory(cat)}
                                             className={`px-2 py-1 text-xs rounded-full transition-colors ${selectedCategory === cat
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
                                                 }`}
                                         >
                                             {cat}

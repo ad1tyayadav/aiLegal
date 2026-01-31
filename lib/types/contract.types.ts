@@ -102,3 +102,22 @@ export interface CombinedViolation {
     govUrl: string;
 }
 
+/**
+ * User role for perspective-based explanations
+ */
+export type UserRole = 'freelancer' | 'company';
+
+/**
+ * Role-based explanation with both perspectives
+ */
+export interface RoleBasedExplanation {
+    freelancer: {
+        simple: string;
+        realLifeImpact: string;
+    };
+    company: {
+        simple: string;
+        realLifeImpact: string;
+    };
+}
+

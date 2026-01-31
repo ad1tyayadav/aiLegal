@@ -162,12 +162,13 @@ export async function POST(request: NextRequest) {
         const riskScore = calculateRiskScore(combinedViolations);
         console.log(`[SCORING] 📊 Overall risk score: ${riskScore}/100 (${getRiskLevel(riskScore)})\n`);
 
-        // 10. Generate ELI5 explanations using Gemini (IN PARALLEL for speed)
-        console.log('[STEP 7] 💬 Generating explanations with Gemini...');
+        // 10. Generate role-based explanations using Gemini (IN PARALLEL for speed)
+        console.log('[STEP 7] 💬 Generating role-based explanations with Gemini...');
         const explainedViolations = await Promise.all(
             combinedViolations.map(async (violation, index) => {
-                let simpleExplanation = '';
-                let realLifeImpact = '';
+                // Default explanations for both roles
+                let freelancerExplanation = { simpleExplanation: '', realLifeImpact: '' };
+                let companyExplanation = { simpleExplanation: '', realLifeImpact: '' };
 
                 try {
                     const explained = await explainClause(
@@ -176,12 +177,18 @@ export async function POST(request: NextRequest) {
                         violation.sectionFullText,
                         language as 'en' | 'hi'
                     );
-                    simpleExplanation = explained.simpleExplanation;
-                    realLifeImpact = explained.realLifeImpact;
+                    freelancerExplanation = explained.freelancer;
+                    companyExplanation = explained.company;
                 } catch (err) {
                     console.warn(`[EXPLAIN] ⚠️ Gemini failed for clause ${violation.clauseId}, using fallback`);
-                    simpleExplanation = violation.explanation;
-                    realLifeImpact = 'This clause may put you at a significant disadvantage. Consider negotiating better terms.';
+                    freelancerExplanation = {
+                        simpleExplanation: violation.explanation,
+                        realLifeImpact: 'This clause may put you at a significant disadvantage. Consider negotiating better terms.'
+                    };
+                    companyExplanation = {
+                        simpleExplanation: 'This clause may face legal challenges under Indian law.',
+                        realLifeImpact: 'Review with legal counsel before relying on this provision.'
+                    };
                 }
 
                 // Find position of this clause in original text
@@ -215,7 +222,7 @@ export async function POST(request: NextRequest) {
                     endIndex: Math.min(text.length, endIndex),
                     appliesTo: profile?.appliesTo || ['All'],
                     businessRisk: profile?.businessRisk || 'Contract Risk',
-                    // NEW: Match source information
+                    // Match source information
                     matchSource: violation.matchSource,
                     matchedKeywords: violation.matchedKeywords || [],
                     semanticSimilarity: violation.semanticSimilarity,
@@ -226,9 +233,16 @@ export async function POST(request: NextRequest) {
                         summary: violation.explanation,
                         url: violation.govUrl
                     },
+                    // NEW: Role-based explanations (both perspectives)
                     explanation: {
-                        simple: simpleExplanation,
-                        realLifeImpact,
+                        freelancer: {
+                            simple: freelancerExplanation.simpleExplanation,
+                            realLifeImpact: freelancerExplanation.realLifeImpact
+                        },
+                        company: {
+                            simple: companyExplanation.simpleExplanation,
+                            realLifeImpact: companyExplanation.realLifeImpact
+                        },
                         generatedBy: 'gemini-2.0-flash'
                     }
                 };

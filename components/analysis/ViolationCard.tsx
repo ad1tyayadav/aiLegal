@@ -16,17 +16,28 @@ interface ViolationProps {
     appliesTo?: string[];
     businessRisk?: string;
     indianLawReference: { section: string; title: string; fullText: string; summary: string; url: string; };
-    explanation: { simple: string; realLifeImpact: string; };
+    explanation: {
+        freelancer: { simple: string; realLifeImpact: string; };
+        company: { simple: string; realLifeImpact: string; };
+        generatedBy?: string;
+    };
 }
+
+type UserRole = 'freelancer' | 'company';
 
 interface Props {
     violation: ViolationProps;
     onJumpToClause: () => void;
     isHighlighted?: boolean;
+    selectedRole?: UserRole;
 }
 
-export default function ViolationCard({ violation, onJumpToClause, isHighlighted }: Props) {
+export default function ViolationCard({ violation, onJumpToClause, isHighlighted, selectedRole = 'freelancer' }: Props) {
     const [expanded, setExpanded] = useState(false);
+    const [localRole, setLocalRole] = useState<UserRole>(selectedRole);
+
+    // Get explanation based on selected role
+    const currentExplanation = violation.explanation[localRole];
 
     const getBadgeVariant = (): "default" | "secondary" | "destructive" | "outline" => {
         switch (violation.riskLevel) {
@@ -63,6 +74,28 @@ export default function ViolationCard({ violation, onJumpToClause, isHighlighted
                     </div>
                 </div>
 
+                {/* Role Toggle */}
+                <div className="flex gap-1 mb-3 p-1 bg-neutral-100 rounded-lg w-fit">
+                    <button
+                        onClick={() => setLocalRole('freelancer')}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${localRole === 'freelancer'
+                                ? 'bg-white text-neutral-900 shadow-sm'
+                                : 'text-neutral-600 hover:text-neutral-900'
+                            }`}
+                    >
+                        👤 Freelancer View
+                    </button>
+                    <button
+                        onClick={() => setLocalRole('company')}
+                        className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${localRole === 'company'
+                                ? 'bg-white text-neutral-900 shadow-sm'
+                                : 'text-neutral-600 hover:text-neutral-900'
+                            }`}
+                    >
+                        🏢 Company View
+                    </button>
+                </div>
+
                 {/* Impact Tags */}
                 {(violation.businessRisk || (violation.appliesTo && violation.appliesTo.length > 0)) && (
                     <div className="flex flex-wrap gap-1.5 mb-3">
@@ -86,9 +119,9 @@ export default function ViolationCard({ violation, onJumpToClause, isHighlighted
                     <p className="text-sm text-neutral-600">{violation.indianLawReference.title}</p>
                 </div>
 
-                {/* Explanation */}
+                {/* Explanation - Role Based */}
                 <p className="text-sm text-neutral-600 leading-relaxed">
-                    {violation.explanation.simple || violation.indianLawReference.summary}
+                    {currentExplanation?.simple || violation.indianLawReference.summary}
                 </p>
 
                 {/* Actions */}
@@ -104,10 +137,12 @@ export default function ViolationCard({ violation, onJumpToClause, isHighlighted
                 {/* Expanded Content */}
                 {expanded && (
                     <div className="mt-4 pt-4 space-y-4 border-t bg-neutral-50 -mx-4 px-4 pb-4 -mb-4 rounded-b-lg">
-                        {violation.explanation.realLifeImpact && (
+                        {currentExplanation?.realLifeImpact && (
                             <div>
-                                <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">Real-World Impact</p>
-                                <p className="text-sm text-neutral-600">{violation.explanation.realLifeImpact}</p>
+                                <p className="text-xs text-neutral-500 uppercase tracking-wide mb-1">
+                                    Real-World Impact ({localRole === 'freelancer' ? 'For You' : 'For Business'})
+                                </p>
+                                <p className="text-sm text-neutral-600">{currentExplanation.realLifeImpact}</p>
                             </div>
                         )}
                         <div>

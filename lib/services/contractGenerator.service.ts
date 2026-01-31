@@ -5,10 +5,11 @@
  */
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { getTemplateById, getClauses } from './contractManager.service';
+import { getTemplateById, getClauses, getTemplates } from './contractManager.service';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+// Use gemini-1.5-flash as it is more stable for free tier
+const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 export interface GeneratedContract {
     title: string;
@@ -22,7 +23,7 @@ export interface GeneratedContract {
 export async function generateContractDraft(
     prompt: string,
     templateId?: string
-): Promise<GeneratedContract> {
+): Promise<GeneratedContract & { isFallback?: boolean, error?: string }> {
     console.log('[CONTRACT_GEN] 🚀 Generating contract for prompt:', prompt.substring(0, 50) + '...');
 
     // Get template if provided
@@ -74,49 +75,138 @@ FORMAT YOUR RESPONSE AS JSON:
   "suggestedCategories": ["Confidentiality", "Payment", "Termination"]
 }`;
 
-    try {
-        const result = await model.generateContent(systemPrompt);
-        const text = result.response.text();
+    // Helper to try generation with a specific model
+    const generateWithModel = async (modelName: string): Promise<any> => {
+        console.log(`[CONTRACT_GEN] 🤖 Attempting with model: ${modelName}`);
+        const currentModel = genAI.getGenerativeModel({ model: modelName });
+        const result = await currentModel.generateContent(systemPrompt);
+        return result;
+    };
 
-        // Extract JSON from response
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-            throw new Error('Invalid Gemini response format');
+    // Retry Loop with Model Fallback
+    // gemini-1.5-flash caused 404s for some keys, using gemini-pro as stable fallback
+    const modelsToTry = ['gemini-1.5-flash', 'gemini-pro'];
+    let lastError;
+
+    for (const modelName of modelsToTry) {
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                const result = await generateWithModel(modelName);
+                const text = result.response.text();
+
+                // Extract JSON from response
+                const jsonMatch = text.match(/\{[\s\S]*\}/);
+                if (!jsonMatch) {
+                    throw new Error('Invalid Gemini response format');
+                }
+
+                const parsed = JSON.parse(jsonMatch[0]);
+
+                // Map suggested categories to actual clause IDs
+                const suggestedClauses = availableClauses
+                    .filter(c => parsed.suggestedCategories?.includes(c.category))
+                    .map(c => c.id.toString());
+
+                console.log(`[CONTRACT_GEN] ✅ generated with ${modelName}`);
+
+                return {
+                    title: parsed.title || 'Untitled Contract',
+                    content: parsed.content || '',
+                    suggestedClauses,
+                    isFallback: false
+                };
+
+            } catch (error: any) {
+                console.warn(`[CONTRACT_GEN] ⚠️ Attempt ${attempt} failed with ${modelName}:`, error.message);
+                lastError = error;
+
+                // If rate limit (429), wait before retry relative to attempt count
+                if (error.message.includes('429')) {
+                    const waitTime = attempt * 2000; // 2s, 4s, 6s
+                    console.log(`[CONTRACT_GEN] ⏳ Rate limited. Waiting ${waitTime}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                } else {
+                    // If not rate limit, try next model immediately (unless it's the last attempt of this model)
+                    if (attempt < 3) {
+                        // wait a bit even for non-rate limit errors to be safe
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+            }
         }
-
-        const parsed = JSON.parse(jsonMatch[0]);
-
-        // Map suggested categories to actual clause IDs
-        const suggestedClauses = availableClauses
-            .filter(c => parsed.suggestedCategories?.includes(c.category))
-            .map(c => c.id.toString());
-
-        console.log('[CONTRACT_GEN] ✅ Generated contract:', parsed.title);
-        console.log('[CONTRACT_GEN] 📝 Suggested clauses:', suggestedClauses.length);
-
-        return {
-            title: parsed.title || 'Untitled Contract',
-            content: parsed.content || '',
-            suggestedClauses
-        };
-
-    } catch (error) {
-        console.error('[CONTRACT_GEN] ❌ Error:', error);
-
-        // Return a basic template as fallback
-        return {
-            title: 'Draft Contract',
-            content: generateFallbackContract(prompt),
-            suggestedClauses: []
-        };
     }
+
+    console.error('[CONTRACT_GEN] ❌ All attempts failed:', lastError);
+
+    const fallback = generateFallbackContract(prompt);
+
+    // Return a basic template as fallback
+    return {
+        title: fallback.title,
+        content: fallback.content,
+        suggestedClauses: [],
+        isFallback: true,
+        error: lastError?.message || 'Unknown error'
+    };
 }
 
 /**
  * Fallback contract if AI fails
+ * Tries to match the prompt to an existing template first.
  */
-function generateFallbackContract(prompt: string): string {
-    return `# DRAFT CONTRACT
+function generateFallbackContract(prompt: string): { title: string, content: string } {
+    const lowerPrompt = prompt.toLowerCase();
+
+    try {
+        const templates = getTemplates();
+
+        // 1. Try to find a matching template by category or title keywords
+        // Keywords: 'nda', 'confidentiality', 'freelance', 'web', 'intern', 'employment'
+        console.log(`[CONTRACT_GEN] 🔍 Searching fallback for keywords in: "${lowerPrompt}"`);
+
+        const match = templates.find(t => {
+            const cat = t.category.toLowerCase(); // 'freelance', 'nda', 'employment'
+            const titleWords = t.title.toLowerCase().split(' ');
+
+            // Direct category match
+            if (lowerPrompt.includes(cat)) return true;
+
+            // Specific keyword mapping
+            if (cat === 'employment' && (lowerPrompt.includes('intern') || lowerPrompt.includes('hiring') || lowerPrompt.includes('job'))) return true;
+            if (cat === 'nda' && (lowerPrompt.includes('confidential') || lowerPrompt.includes('non-disclosure'))) return true;
+            if (cat === 'freelance' && (lowerPrompt.includes('web') || lowerPrompt.includes('developer') || lowerPrompt.includes('contractor'))) return true;
+
+            // Title word match
+            return titleWords.some(word => word.length > 4 && lowerPrompt.includes(word));
+        });
+
+        if (match) {
+            console.log(`[CONTRACT_GEN] ⚠️ AI failed, falling back to matched template: ${match.title}`);
+
+            // Inject prompt into template placeholders if possible
+            let content = match.defaultContent;
+
+            if (content.includes('{{SCOPE_DESCRIPTION}}')) {
+                content = content.replace('{{SCOPE_DESCRIPTION}}', prompt);
+            } else if (content.includes('{{OBJECTIVE_1}}')) {
+                content = content.replace('{{OBJECTIVE_1}}', prompt)
+                    .replace('- {{OBJECTIVE_2}}', '')
+                    .replace('- {{OBJECTIVE_3}}', '');
+            }
+
+            return {
+                title: match.title,
+                content: content
+            };
+        }
+    } catch (err) {
+        console.error('Error in fallback logic:', err);
+    }
+
+    // 2. Generic Fallback if no specific template found
+    return {
+        title: 'Draft Contract (AI Failed)',
+        content: `# DRAFT CONTRACT
 
 **Date:** {{DATE}}
 
@@ -174,7 +264,8 @@ Date: {{SIGNATURE_DATE}}
 _________________________
 Name: {{PARTY_B_NAME}}
 Date: {{SIGNATURE_DATE}}
-`;
+`
+    };
 }
 
 /**

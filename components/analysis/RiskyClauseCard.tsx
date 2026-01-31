@@ -1,6 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { AlertTriangle, AlertCircle, Info, ExternalLink } from 'lucide-react';
+
+type UserRole = 'freelancer' | 'company';
 
 interface Props {
     clause: {
@@ -17,15 +20,18 @@ interface Props {
             url: string;
         };
         explanation: {
-            simple: string;
-            realLifeImpact: string;
-            generatedBy: string;
+            freelancer: { simple: string; realLifeImpact: string; };
+            company: { simple: string; realLifeImpact: string; };
+            generatedBy?: string;
         };
         matchedKeywords: string[];
     };
 }
 
 export default function RiskyClauseCard({ clause }: Props) {
+    const [role, setRole] = useState<UserRole>('freelancer');
+    const currentExplanation = clause.explanation[role];
+
     const getBadgeColor = () => {
         switch (clause.riskLevel) {
             case 'CRITICAL':
@@ -63,6 +69,28 @@ export default function RiskyClauseCard({ clause }: Props) {
                 <span className="text-sm text-gray-500">Clause #{clause.clauseNumber}</span>
             </div>
 
+            {/* Role Toggle */}
+            <div className="flex gap-1 mb-4 p-1 bg-gray-100 rounded-lg w-fit">
+                <button
+                    onClick={() => setRole('freelancer')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${role === 'freelancer'
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                >
+                    👤 Freelancer View
+                </button>
+                <button
+                    onClick={() => setRole('company')}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${role === 'company'
+                            ? 'bg-white text-gray-900 shadow-sm'
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                >
+                    🏢 Company View
+                </button>
+            </div>
+
             {/* Original Clause Text */}
             <div className="mb-4">
                 <h4 className="font-semibold text-gray-900 mb-2">Original Clause:</h4>
@@ -71,16 +99,16 @@ export default function RiskyClauseCard({ clause }: Props) {
                 </div>
             </div>
 
-            {/* Simple Explanation */}
+            {/* Simple Explanation - Role Based */}
             <div className="mb-4">
-                <h4 className="font-semibold text-gray-900 mb-2">📝 What This Means:</h4>
-                <p className="text-gray-700">{clause.explanation.simple}</p>
+                <h4 className="font-semibold text-gray-900 mb-2">📝 What This Means ({role === 'freelancer' ? 'For You' : 'For Business'}):</h4>
+                <p className="text-gray-700">{currentExplanation?.simple}</p>
             </div>
 
-            {/* Real-Life Impact */}
+            {/* Real-Life Impact - Role Based */}
             <div className="mb-4">
                 <h4 className="font-semibold text-gray-900 mb-2">⚡ Real-Life Impact:</h4>
-                <p className="text-gray-700">{clause.explanation.realLifeImpact}</p>
+                <p className="text-gray-700">{currentExplanation?.realLifeImpact}</p>
             </div>
 
             {/* Indian Law Reference */}

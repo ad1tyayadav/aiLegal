@@ -6,10 +6,18 @@
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
-// Load .env BEFORE any other code runs
-const result = dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+// Load .env.local BEFORE any other code runs (fallback to .env)
+const envLocalPath = path.resolve(process.cwd(), '.env.local');
+const envPath = path.resolve(process.cwd(), '.env');
 
-console.log('[STARTUP] Environment loaded from:', path.resolve(process.cwd(), '.env'));
+// Try .env.local first, then .env
+let result = dotenv.config({ path: envLocalPath });
+if (result.error) {
+    result = dotenv.config({ path: envPath });
+    console.log('[STARTUP] Environment loaded from:', envPath);
+} else {
+    console.log('[STARTUP] Environment loaded from:', envLocalPath);
+}
 console.log('[STARTUP] dotenv result:', result.error ? `Error: ${result.error.message}` : 'Success');
 console.log('[STARTUP] CHROMA_API_KEY:', process.env.CHROMA_API_KEY ? `Set (${process.env.CHROMA_API_KEY.substring(0, 10)}...)` : 'NOT SET');
 console.log('[STARTUP] CHROMA_TENANT:', process.env.CHROMA_TENANT || 'NOT SET');

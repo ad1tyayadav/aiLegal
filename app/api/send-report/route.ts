@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
                 <div style="margin-bottom: 20px; padding: 15px; border-left: 4px solid ${c.riskLevel === 'CRITICAL' ? '#ef4444' : '#f97316'}; background-color: #f9fafb;">
                     <h3 style="margin: 0 0 10px 0; color: #111827;">Clause ${c.clauseNumber} (${c.riskLevel})</h3>
                     <p style="margin: 0 0 10px 0; font-style: italic; color: #4b5563;">"${c.originalText.substring(0, 200)}..."</p>
-                    <p style="margin: 0; color: #374151;"><strong>Risk:</strong> ${c.explanation.simple}</p>
+                    <p style="margin: 0; color: #374151;"><strong>Risk:</strong> ${c.explanation.freelancer?.simple || c.explanation.company?.simple || 'Review this clause carefully.'}</p>
                 </div>
             `).join('');
 

@@ -17,7 +17,11 @@ interface Violation {
     appliesTo?: string[];
     businessRisk?: string;
     indianLawReference: { section: string; title: string; fullText: string; summary: string; url: string; };
-    explanation: { simple: string; realLifeImpact: string; };
+    explanation: {
+        freelancer: { simple: string; realLifeImpact: string; };
+        company: { simple: string; realLifeImpact: string; };
+        generatedBy?: string;
+    };
 }
 
 interface Props {
