@@ -4,78 +4,102 @@
 
 AndhaKanoon is a privacy-first contract analyzer that detects predatory clauses in freelance contracts using **Indian law** (NOT US law), explains risks in simple language, and generates a 0-100 risk score.
 
-## 🎯 Features
+![Risk Score Demo](https://via.placeholder.com/800x400/1a1a2e/16213e?text=AndhaKanoon+-+Contract+Risk+Analyzer)
 
-- ✅ **Indian Law Grounded**: Validates against 225 sections of the Indian Contract Act, 1872
-- ✅ **0-100 Risk Score**: Deterministic scoring based on clause severity (not AI guesswork)
-- ✅ **ELI5 Explanations**: AI-powered simple explanations in English or Hindi
-- ✅ **Privacy-First**: Contracts analyzed in-memory and deleted immediately
-- ✅ **Deviation Detection**: Compares against fair contract baseline
-- ✅ **Multi-Format Support**: PDF, DOCX, PNG, JPG (with OCR)
+## 🎯 Key Features
+
+| Feature | Description |
+|---------|-------------|
+| ⚖️ **Indian Law Grounded** | Validates against 225 sections of the Indian Contract Act, 1872 |
+| 🎯 **Hybrid Detection** | Keyword matching + **Semantic AI Search** (ChromaDB + Gemini embeddings) |
+| 📊 **0-100 Risk Score** | Deterministic scoring based on clause severity |
+| 💬 **ELI5 Explanations** | AI-powered explanations in English or Hindi |
+| 🔒 **Privacy-First** | Contracts analyzed in-memory and deleted immediately |
+| 📄 **Multi-Format** | PDF, DOCX, PNG, JPG (with OCR) |
 
 ## 🛠️ Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Database**: SQLite (better-sqlite3)
-- **PDF Parsing**: pdf-parse
-- **AI**: Google Gemini 1.5 Flash
+- **Styling**: Tailwind CSS v4
+- **Database**: SQLite (metadata) + ChromaDB (vectors)
+- **AI**: Google Gemini 2.0 Flash
 - **OCR**: Tesseract.js
 
-## 📦 Installation
+---
 
-### 1. Clone Repository
+## 📦 Quick Start
+
+### 1. Clone & Install
 
 ```bash
 git clone https://github.com/yourusername/andhakanoon.git
 cd andhakanoon
-```
-
-### 2. Install Dependencies
-
-```bash
 npm install
 ```
 
-### 3. Set Up Environment
+### 2. Configure Environment
 
-Create `.env.local`:
+Create `.env` file:
 
 ```env
-# Get API key from: https://makersuite.google.com/app/apikey
-GEMINI_API_KEY=your_gemini_api_key_here
+# Gemini API (Required)
+# Get from: https://makersuite.google.com/app/apikey
+GEMINI_API_KEY=your_gemini_api_key
 
-# Database path
+# Database
 DATABASE_PATH=./data/legal_knowledge.db
 
-# Environment
+# ════════════════════════════════════════════════════════════
+# ChromaDB (Vector Database for Semantic Search)
+# Choose ONE option below:
+# ════════════════════════════════════════════════════════════
+
+# Option 1: ChromaDB Cloud (Recommended - Free Tier)
+# Sign up at: https://trychroma.com
+CHROMA_API_KEY=your_chroma_api_key
+CHROMA_TENANT=your_tenant_id
+CHROMA_DATABASE=your_database_name
+
+# Option 2: Local Docker
+# Run: docker run -d -p 8000:8000 chromadb/chroma
+# CHROMA_URL=http://localhost:8000
+
+CHROMA_COLLECTION=clause_patterns
 NODE_ENV=development
 ```
 
-### 4. Initialize Database
-
-This will download the 53-page Indian Contract Act PDF and load it into SQLite:
+### 3. Initialize Database
 
 ```bash
+# Seed SQLite with Indian Contract Act + clause patterns
 npm run seed
+
+# Generate embeddings and upload to ChromaDB
+npm run generate-embeddings
 ```
 
 Expected output:
 ```
-📥 Downloading Indian Contract Act PDF...
-✅ PDF downloaded successfully
-📄 Parsing Indian Contract Act PDF...
-📊 Loaded PDF: 53 pages, 125000 characters
-📚 Found 225 sections
-✅ Indian Contract Act loaded into database
-✅ Seeded 10 clause patterns
-✅ Seeded 6 fair contract baselines
-✅ Seeded 4 explanation templates
-✅ Database seeded successfully
+╔════════════════════════════════════════════════════════════╗
+║       EMBEDDING GENERATION SCRIPT                          ║
+╚════════════════════════════════════════════════════════════╝
+
+[CHROMA] ☁️ CloudClient initialized
+[CHROMA] 📚 Collection "clause_patterns" ready (0 patterns)
+
+🔄 [1] non_compete_section27
+    ✅ Generated 768-dim vector in 245ms
+...
+
+╔════════════════════════════════════════════════════════════╗
+║  ✅ Generated: 50   embeddings                              ║
+╚════════════════════════════════════════════════════════════╝
+
+🎉 ChromaDB is ready! Semantic search is now enabled.
 ```
 
-### 5. Run Development Server
+### 4. Run Development Server
 
 ```bash
 npm run dev
@@ -83,153 +107,156 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000)
 
+---
+
 ## 🧪 Testing
 
-### Test with Sample Contracts
+### Sample Contracts Included
 
-Two sample contracts are included:
+| File | Type | Expected Score |
+|------|------|---------------|
+| `public/samples/fair_contract.txt` | Safe | 0-15 ✅ |
+| `public/samples/predatory_contract.txt` | Dangerous | 80-100 🚨 |
+| `public/samples/deceptive_contract.txt` | Wolf-in-sheep's-clothing | 60-85 ⚠️ |
 
-1. **Predatory Contract** (`/public/samples/predatory_contract.txt`)
-   - Contains Section 27 violations (non-compete)
-   - Unlimited liability
-   - Excessive penalties
-   - Foreign jurisdiction
-   - Expected score: **95/100 (DANGEROUS)**
+The **deceptive contract** looks professional but contains hidden predatory clauses - perfect for testing semantic search!
 
-2. **Fair Contract** (`/public/samples/fair_contract.txt`)
-   - Balanced terms
-   - Net 30 payment
-   - Mutual termination rights
-   - Expected score: **0-15/100 (SAFE)**
+---
 
-## 📚 How It Works
+## 🧠 How It Works
 
-### 1. **Text Extraction**
-- Supports PDF, DOCX, and images (OCR with Tesseract)
-- Contract parsed into individual clauses
+### Detection Pipeline
 
-### 2. **Rule-Based Validation** (NOT AI)
-- Each clause checked against 10 clause patterns in database
-- Keyword matching triggers violations
-- Example: "non-compete" + "shall not work" → Section 27 violation
-
-### 3. **Indian Law Grounding**
-- All 225 sections of Indian Contract Act loaded from official 53-page PDF
-- Each violation linked to specific section with full text
-- Example: Section 27 makes non-compete clauses VOID in India
-
-### 4. **Risk Scoring**
 ```
-CRITICAL: 40 points (Section 27, Section 23 violations)
-HIGH: 25 points (Unlimited liability, blanket IP transfer)
-MEDIUM: 15 points (Unilateral termination, delayed payments)
-LOW: 5 points (Vague scope, minor issues)
+┌─────────────┐    ┌─────────────┐    ┌─────────────┐
+│  Upload     │───▶│  Extract    │───▶│  Parse      │
+│  Contract   │    │  Text       │    │  Clauses    │
+└─────────────┘    └─────────────┘    └─────────────┘
+                                             │
+                         ┌───────────────────┼───────────────────┐
+                         ▼                   ▼                   ▼
+                   ┌──────────┐       ┌──────────────┐    ┌──────────┐
+                   │ Keyword  │       │  Semantic    │    │ Deviation│
+                   │ Matching │       │  Search      │    │ Checker  │
+                   │ (SQLite) │       │  (ChromaDB)  │    │          │
+                   └──────────┘       └──────────────┘    └──────────┘
+                         │                   │                   │
+                         └───────────────────┼───────────────────┘
+                                             ▼
+                                    ┌─────────────────┐
+                                    │  Merge & Score  │
+                                    │  0-100 Risk     │
+                                    └─────────────────┘
+                                             │
+                                             ▼
+                                    ┌─────────────────┐
+                                    │  Gemini AI      │
+                                    │  Explanations   │
+                                    └─────────────────┘
+```
+
+### Detection Methods
+
+| Method | Purpose | How It Works |
+|--------|---------|--------------|
+| **Keyword** | Exact matches | "non-compete" → Section 27 violation |
+| **Semantic** | Synonym detection | "shall not engage with competitors" → Section 27 (via embeddings) |
+| **Deviation** | Baseline comparison | "120 day payment" vs standard "30 days" |
+
+### Risk Scoring
+
+```
+CRITICAL: 40 points   (Section 27, Section 23 violations)
+HIGH:     25 points   (Unlimited liability, blanket IP transfer)
+MEDIUM:   15 points   (Unilateral termination, delayed payments)
+LOW:      5 points    (Vague scope, minor issues)
 
 Total Score: Sum of all violations (capped at 100)
 ```
 
-### 5. **AI Explanations** (Gemini 1.5 Flash)
-- AI **explains** risky clauses in simple language
-- AI does NOT decide legality (that's rule-based)
-- Templates ensure consistency
+---
 
-### 6. **Deviation Check**
-- Compares contract against "fair baseline"
-- Example: "Your payment terms are Net 120 vs standard Net 30"
+## ⚖️ Indian Law: Key Sections
 
-##  Critical: Indian Law vs US Law
+### Section 27 (Non-Compete Clauses)
 
-**Section 27 of Indian Contract Act, 1872:**
-> "Every agreement by which anyone is restrained from exercising a lawful profession, trade or business of any kind, is to that extent void."
+> "Every agreement by which anyone is restrained from exercising a lawful profession, trade or business of any kind, is to that extent **void**."
 
-This means:
-- ❌ Non-compete clauses are **VOID** in India (unlike enforceable in many US states)
-- ❌ You CANNOT be prevented from working with competitors
-- ✅ Freelancers can ignore non-compete clauses
+**This means**: Non-compete clauses are **VOID** in India. You can freely work with competitors after leaving a job.
 
-**Section 23:**
-> "The consideration or object of an agreement is lawful, unless it is forbidden by law; or is of such a nature that, if permitted, it would defeat the provisions of any law; or is fraudulent or involves or implies injury to the person or property of another"
+### Section 23 (Unlawful Agreements)
 
-This means:
-- ❌ Contracts with illegal purposes are **VOID AB INITIO** (void from the start)
-- ❌ Entire contract is unenforceable, not just the clause
+> "The consideration or object of an agreement is unlawful if it is forbidden by law, or would defeat the provisions of any law, or is fraudulent."
 
-## 🔐 Privacy Architecture
+**This means**: Contracts with illegal purposes are **void ab initio** (void from the start).
 
-1. **No Storage**: Contracts analyzed in-memory
-2. **Immediate Deletion**: Files deleted after analysis
-3. **No Logging**: Contract content never logged
-4. **No Database**: Only analysis results stored temporarily (if needed)
+### Section 73/74 (Damages & Penalties)
+
+Excessive penalty clauses (e.g., "10x contract value for any breach") may be unenforceable.
+
+---
 
 ## 📁 Project Structure
 
 ```
 andhakanoon/
 ├── app/
-│   ├── page.tsx                    # Homepage with upload UI
-│   ├── layout.tsx                  # Root layout
+│   ├── page.tsx                   # Homepage with upload UI
+│   ├── result/page.tsx            # Analysis results page
 │   └── api/
-│       ├── analyze/route.ts        # Main analysis endpoint
-│       ├── health/route.ts         # Health check
-│       └── laws/route.ts           # List Indian laws
+│       ├── analyze/route.ts       # Main analysis endpoint
+│       ├── health/route.ts        # Health check
+│       └── laws/route.ts          # List Indian laws
 │
 ├── components/
-│   ├── upload/
-│   │   └── ContractUploader.tsx    # Drag-and-drop uploader
-│   └── analysis/
-│      ├── RiskScoreMeter.tsx      # 0-100 gauge
-│       ├── RiskyClauseCard.tsx     # Clause display
-│       └── DeviationHighlighter.tsx # Baseline comparison
+│   ├── contract/                  # Upload components
+│   └── ui/                        # shadcn/ui components
 │
 ├── lib/
 │   ├── db/
-│   │   ├── client.ts               # SQLite connection
-│   │   ├── schema.sql              # Database schema
-│   │   ├── actLoader.ts            # PDF loader
-│   │   ├── seed.ts                 # Seed data
-│   │   └── queries.ts              # SQL queries
+│   │   ├── client.ts              # SQLite connection
+│   │   ├── chromaClient.ts        # ChromaDB Cloud/Docker client
+│   │   ├── schema.sql             # Database schema
+│   │   └── seed.ts                # Seed data (50 patterns)
 │   │
-│   └── services/
-│       ├── extractor.service.ts    # PDF/DOCX/OCR
-│       ├── parser.service.ts       # Clause splitting
-│       ├── indianLawValidator.service.ts # Rule-based validation
-│       ├── deviationChecker.service.ts # Baseline comparison
-│       ├── scorer.service.ts       # Risk calculation
-│       └── explainer.service.ts    # Gemini explanations
+│   ├── services/
+│   │   ├── indianLawValidator.ts  # Keyword-based validation
+│   │   ├── semanticValidator.ts   # ChromaDB vector search
+│   │   ├── deviationChecker.ts    # Baseline comparison
+│   │   ├── explainer.service.ts   # Gemini AI explanations
+│   │   └── scorer.service.ts      # Risk calculation
+│   │
+│   └── utils/
+│       └── vector.utils.ts        # Embedding generation
 │
-├── data/
-│   ├── indian_contract_act.pdf     # 53-page PDF (auto-downloaded)
-│   └── legal_knowledge.db          # SQLite database
+├── scripts/
+│   ├── generateEmbeddings.ts      # Entry point
+│   └── generateEmbeddings.main.ts # Embedding logic
 │
-└── public/samples/
-    ├── predatory_contract.txt      # Test contract (risky)
-    └── fair_contract.txt           # Test contract (safe)
+├── public/samples/                # Test contracts
+│   ├── fair_contract.txt
+│   ├── predatory_contract.txt
+│   └── deceptive_contract.txt
+│
+└── data/
+    ├── indian_contract_act.pdf    # Official PDF
+    └── legal_knowledge.db         # SQLite database
 ```
 
-## 🚨 Common Violations Detected
+---
 
-| Violation Type | Risk Level | Indian Law Section | Points |
-|---------------|------------|-------------------|--------|
-| Non-compete clause | CRITICAL | Section 27 | 40 |
-| Unlawful object | CRITICAL | Section 23 | 40 |
-| Unlimited liability | HIGH | Section 73 | 25 |
-| Blanket IP transfer | HIGH | Section 10 | 25 |
-| Excessive penalties | HIGH | Section 74 | 20 |
-| Unilateral termination | MEDIUM | Section 10 | 15 |
-| Delayed payments (90+ days) | MEDIUM | Section 73 | 18 |
-| Foreign jurisdiction | MEDIUM | Section 10 | 12 |
-| Vague scope | LOW | Section 10 | 5 |
-
-## 🔍 API Endpoints
+## 🔌 API Reference
 
 ### POST /api/analyze
-Analyze a contract file
+
+Analyze a contract file.
 
 **Request:**
 ```typescript
 FormData {
-  file: File (PDF/DOCX/Image)
-  language: 'en' | 'hi'
+  file: File              // PDF, DOCX, or Image
+  language: 'en' | 'hi'   // Optional
+  enableSemantic: boolean // Enable semantic search (default: true)
 }
 ```
 
@@ -239,45 +266,101 @@ FormData {
   success: true,
   processingTimeMs: 2345,
   analysis: {
-    overallRiskScore: 95,
-    riskLevel: "DANGEROUS",
+    overallRiskScore: 75,
+    riskLevel: "HIGH",
     totalClauses: 10,
-    riskyClausesFound: 7,
-    breakdown: { CRITICAL: 2, HIGH: 3, MEDIUM: 2, LOW: 0 }
+    riskyClausesFound: 5,
+    breakdown: { CRITICAL: 1, HIGH: 2, MEDIUM: 2, LOW: 0 }
   },
-  riskyClauses: [...],
+  riskyClauses: [{
+    clauseId: "clause_3",
+    text: "...",
+    riskLevel: "CRITICAL",
+    riskScore: 40,
+    linkedSection: "Section 27",
+    explanation: "...",
+    matchSource: "semantic",        // "keyword" | "semantic" | "both"
+    semanticSimilarity: 0.82
+  }],
   deviations: [...],
-  disclaimer: "..."
+  performance: {
+    keywordSearchMs: 15,
+    semanticSearchMs: 450,
+    mergeMs: 5
+  }
 }
 ```
 
 ### GET /api/health
-Check system health
 
-### GET /api/laws
-List all Indian Contract Act sections
+Check system health and ChromaDB status.
+
+---
+
+## 🔐 Privacy
+
+1. **No Storage**: Contracts analyzed in-memory only
+2. **Immediate Deletion**: Files deleted after analysis
+3. **No Logging**: Contract content never logged
+4. **Local Processing**: All processing happens server-side
+
+---
+
+## 🚨 Common Violations Detected
+
+| Type | Risk | Section | Points |
+|------|------|---------|--------|
+| Non-compete clause | CRITICAL | Section 27 | 40 |
+| Unlawful object | CRITICAL | Section 23 | 40 |
+| Unlimited liability | HIGH | Section 73 | 25 |
+| Blanket IP transfer | HIGH | Section 10 | 25 |
+| Excessive penalties | HIGH | Section 74 | 20 |
+| Unilateral termination | MEDIUM | Section 10 | 15 |
+| Delayed payments (90+ days) | MEDIUM | Section 73 | 18 |
+| Foreign jurisdiction | MEDIUM | Section 10 | 12 |
+
+---
+
+## 📜 NPM Scripts
+
+| Script | Description |
+|--------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Build for production |
+| `npm run seed` | Seed SQLite database |
+| `npm run generate-embeddings` | Generate ChromaDB embeddings |
+| `npm run check-db` | Display database statistics |
+
+---
 
 ## 🤝 Contributing
 
-Contributions welcome! Please:
+Contributions welcome! Focus areas:
 
-1. Focus on **Indian law** (not US law)
-2. Add more clause patterns to database
-3. Improve ELI5 explanations
-4. Add support for more Indian languages
+1. Add more clause patterns (especially India-specific)
+2. Improve semantic detection accuracy
+3. Add support for more Indian languages
+4. Improve UI/UX
 
-## ⚖️ Disclaimer
+---
+
+## ⚠️ Disclaimer
 
 This tool is for **educational purposes only**. It does not constitute legal advice. Always consult a qualified lawyer before signing any contract.
+
+---
 
 ## 📜 License
 
 MIT License
 
+---
+
 ## 🙏 Acknowledgments
 
-- Indian Contract Act, 1872 (Official PDF): [https://www.indiacode.nic.in/](https://www.indiacode.nic.in/)
-- Powered by Google Gemini 1.5 Flash
+- Indian Contract Act, 1872: [indiacode.nic.in](https://www.indiacode.nic.in/)
+- ChromaDB: [trychroma.com](https://trychroma.com/)
+- Google Gemini AI
 - Built for Indian freelancers ❤️
 
 ---

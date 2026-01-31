@@ -57,15 +57,19 @@ function seedClausePatterns() {
         {
             clause_type: 'non_compete_section27',
             keywords: JSON.stringify([
+                // Direct non-compete
                 'non-compete', 'non compete', 'shall not compete', 'restraint of trade',
                 'not engage in similar business', 'cannot work for competitor',
                 'restricted from providing services', 'shall not solicit',
-                'covenant not to compete', 'agree not to work'
+                'covenant not to compete', 'agree not to work',
+                // Indirect restraint of trade
+                'not engage in any', 'refrain from exercising', 'prohibited from working',
+                'shall not provide similar services', 'exclusive engagement'
             ]),
             risk_level: 'CRITICAL',
             risk_score: 40,
             linked_section: 'Section 27',
-            description: 'Non-compete clause restricting freelancer from taking other work',
+            description: 'Non-compete clause restricting freelancer from taking other work - void under Indian law',
             example_violation: '"The Contractor agrees not to engage in any competing business for 2 years"'
         },
         {
@@ -99,15 +103,46 @@ function seedClausePatterns() {
         {
             clause_type: 'blanket_ip_transfer',
             keywords: JSON.stringify([
-                'all intellectual property', 'IP rights', 'assign all rights',
-                'work for hire', 'waive moral rights', 'ownership of all work',
-                'copyright assignment', 'inventions belong to', 'transfer all IP'
+                // More specific - focuses on OWNERSHIP, not just delivery
+                'all intellectual property belongs', 'assign all rights title',
+                'waive moral rights', 'ownership of all work product',
+                'whether related to the project or not', 'inventions conceived',
+                'client owns all IP', 'transfer all intellectual property',
+                'work created during or after', 'ideas conceived within'
             ]),
             risk_level: 'HIGH',
             risk_score: 25,
-            linked_section: 'Section 10',
-            description: 'Transfers all IP rights without scope limitation or compensation',
+            linked_section: 'Section 27', // Not Section 10 - IP overreach can restrain trade
+            description: 'Overreaching IP clause claiming ownership of all work including unrelated projects',
             example_violation: '"All intellectual property created during the term, whether related to the project or not, belongs to Client"'
+        },
+        // NEW: Indirect non-compete via portfolio restriction
+        {
+            clause_type: 'indirect_non_compete_portfolio',
+            keywords: JSON.stringify([
+                'portfolio.*confidential', 'showcase.*without.*consent',
+                'not.*display.*work', 'cannot.*reference.*client',
+                'prohibit.*portfolio', 'restrict.*showcase'
+            ]),
+            risk_level: 'CRITICAL',
+            risk_score: 40,
+            linked_section: 'Section 27',
+            description: 'Restricting portfolio use combined with long confidentiality effectively prevents working in the field',
+            example_violation: '"Developer may not showcase work in portfolio without prior written consent, confidentiality extends for 5 years"'
+        },
+        // NEW: Excessive liability cap
+        {
+            clause_type: 'excessive_liability_cap',
+            keywords: JSON.stringify([
+                'liability shall not exceed.*total fees',
+                'liable.*full contract value', 'damages.*equal to.*contract',
+                'indemnify.*full amount', 'liability capped at contract value'
+            ]),
+            risk_level: 'HIGH',
+            risk_score: 20,
+            linked_section: 'Section 74',
+            description: 'Liability capped at full contract value is excessive for freelance work',
+            example_violation: '"Developer liability shall not exceed total fees payable under this agreement (₹8,50,000)"'
         },
         {
             clause_type: 'excessive_penalty_section74',
@@ -128,12 +163,12 @@ function seedClausePatterns() {
             keywords: JSON.stringify([
                 'terminate at will', 'without cause', 'immediate termination',
                 'terminate without notice', 'at sole discretion', 'cancel anytime',
-                'terminate for convenience'
+                'terminate for convenience', 'may terminate immediately'
             ]),
             risk_level: 'MEDIUM',
             risk_score: 15,
-            linked_section: 'Section 10',
-            description: 'Client can terminate without reason or notice period',
+            linked_section: 'Section 73', // Section 73 - damages from breach/termination
+            description: 'Client can terminate without reason or notice period, leaving freelancer unpaid',
             example_violation: '"Client may terminate this agreement at any time without cause or notice"'
         },
         {
@@ -152,14 +187,14 @@ function seedClausePatterns() {
         {
             clause_type: 'foreign_jurisdiction',
             keywords: JSON.stringify([
-                'governed by laws of', 'jurisdiction of', 'courts of USA',
-                'UK jurisdiction', 'Singapore courts', 'arbitration in',
-                'New York law', 'California law', 'Delaware courts'
+                'governed by laws of USA', 'jurisdiction of.*USA', 'courts of USA',
+                'UK jurisdiction', 'Singapore courts', 'arbitration in Singapore',
+                'New York law', 'California law', 'Delaware courts', 'English law'
             ]),
             risk_level: 'MEDIUM',
             risk_score: 12,
-            linked_section: 'Section 10',
-            description: 'Disputes must be resolved in foreign jurisdiction (expensive for freelancer)',
+            linked_section: 'Section 23', // Foreign jurisdiction could defeat provisions of Indian law
+            description: 'Disputes must be resolved in foreign jurisdiction - expensive and may circumvent Indian law protections',
             example_violation: '"This agreement shall be governed by the laws of Delaware, USA"'
         },
         {
@@ -180,15 +215,16 @@ function seedClausePatterns() {
         {
             clause_type: 'vague_scope',
             keywords: JSON.stringify([
-                'as required', 'additional work', 'reasonable efforts',
-                'scope may change', 'at client discretion', 'other duties',
-                'similar tasks', 'as needed'
+                // Only flag clearly vague terms, not standard project management language
+                'scope may change without notice', 'at client discretion without',
+                'other duties as assigned', 'additional work without compensation',
+                'required from time to time'
             ]),
             risk_level: 'LOW',
             risk_score: 5,
-            linked_section: 'Section 10',
-            description: 'Work scope not clearly defined, leading to scope creep',
-            example_violation: '"Contractor shall perform services as required by Client from time to time"'
+            linked_section: 'Section 73', // Vague scope leads to unpaid work
+            description: 'Work scope not clearly defined, may lead to unpaid scope creep',
+            example_violation: '"Contractor shall perform services as required by Client from time to time without additional compensation"'
         }
     ];
 

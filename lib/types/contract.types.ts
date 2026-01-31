@@ -66,3 +66,39 @@ export interface AnalysisResult {
     deviations: Deviation[];
     disclaimer: string;
 }
+
+/**
+ * Semantic search match result
+ */
+export interface SemanticMatch {
+    clauseId: number;
+    clauseText: string;
+    matchedPattern: string;
+    similarity: number;  // 0-1 score
+    riskLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+    riskScore: number;
+    sectionNumber: string;
+    sectionTitle: string;
+    description: string;
+    matchSource: 'semantic';
+}
+
+/**
+ * Combined violation (from keyword OR semantic)
+ */
+export interface CombinedViolation {
+    clauseId: number;
+    clauseText: string;
+    violationType: string;
+    sectionNumber: string;
+    sectionTitle: string;
+    sectionFullText: string;
+    riskLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+    riskScore: number;
+    matchedKeywords?: string[];      // Only for keyword matches
+    semanticSimilarity?: number;     // Only for semantic matches
+    matchSource: 'keyword' | 'semantic' | 'both';
+    explanation: string;
+    govUrl: string;
+}
+

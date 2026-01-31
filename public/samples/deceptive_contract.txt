@@ -1,0 +1,120 @@
+PROFESSIONAL SERVICES AGREEMENT
+
+This Professional Services Agreement ("Agreement") is entered into as of [Date] between:
+
+SERVICE RECIPIENT: TechVenture Solutions Pvt. Ltd. ("Client")
+                   123 Silicon Avenue, Bengaluru, Karnataka 560001
+
+SERVICE PROVIDER:  [Your Name] ("Consultant")
+                   [Address]
+
+WHEREAS, Client desires to engage Consultant to provide professional software development services, and Consultant desires to provide such services under the terms and conditions set forth herein.
+
+NOW, THEREFORE, in consideration of the mutual covenants contained herein, the parties agree as follows:
+
+─────────────────────────────────────────────────────────────────
+1. ENGAGEMENT AND SCOPE OF SERVICES
+─────────────────────────────────────────────────────────────────
+
+Client hereby engages Consultant as an independent contractor to provide software development and consulting services as described in Schedule A ("Scope of Work"). Consultant agrees to perform services in a professional manner consistent with industry standards.
+
+─────────────────────────────────────────────────────────────────
+2. TERM AND COMMENCEMENT
+─────────────────────────────────────────────────────────────────
+
+This Agreement shall commence on the Effective Date and continue for a period of six (6) months, unless terminated earlier in accordance with Section 8. The Agreement may be renewed upon mutual written consent.
+
+─────────────────────────────────────────────────────────────────
+3. PROFESSIONAL FEES AND COMPENSATION
+─────────────────────────────────────────────────────────────────
+
+3.1 Consultant shall receive compensation as specified in Schedule B, calculated on a milestone basis.
+
+3.2 Invoices shall be submitted monthly. Payment shall be processed within ninety (90) business days following receipt of a properly submitted invoice, contingent upon Client's receipt of corresponding funds from its investors and strategic partners. Client reserves absolute discretion to adjust payment amounts based on its internal quality assessment standards.
+
+3.3 All compensation includes applicable taxes and out-of-pocket expenses unless otherwise specified.
+
+─────────────────────────────────────────────────────────────────
+4. INTELLECTUAL PROPERTY AND WORK PRODUCT
+─────────────────────────────────────────────────────────────────
+
+4.1 All deliverables, work product, source code, documentation, concepts, methodologies, algorithms, ideas (whether implemented or not), and any other materials conceived, developed, or created by Consultant during the engagement period, including work performed outside business hours or unrelated to assigned tasks, shall become the sole and exclusive property of Client.
+
+4.2 Consultant hereby irrevocably assigns and transfers all rights, title, and interest in perpetuity with no territorial limitations. Consultant waives any and all moral rights in such work product.
+
+─────────────────────────────────────────────────────────────────
+5. EXCLUSIVITY AND PROFESSIONAL COMMITMENT
+─────────────────────────────────────────────────────────────────
+
+5.1 During the term of this Agreement and for a period of twenty-four (24) months following its termination, Consultant agrees not to directly or indirectly engage with, provide services to, or accept employment from any entity operating in the technology, software, digital services, or related sectors.
+
+5.2 This covenant is essential for protection of Client's proprietary methodologies and competitive standing. Consultant acknowledges that this provision is fair and reasonable.
+
+─────────────────────────────────────────────────────────────────
+6. CONFIDENTIALITY OBLIGATIONS
+─────────────────────────────────────────────────────────────────
+
+6.1 Both parties agree to maintain strict confidentiality regarding proprietary information exchanged during the engagement, for a period of two (2) years following termination.
+
+6.2 Consultant shall not disclose the terms of this Agreement to any third party, including legal counsel or professional advisors, without prior written consent from Client.
+
+─────────────────────────────────────────────────────────────────
+7. REPRESENTATIONS AND WARRANTIES
+─────────────────────────────────────────────────────────────────
+
+7.1 Consultant represents and warrants that all deliverables shall be free from material defects for a period of thirty (30) days following acceptance.
+
+7.2 Consultant shall bear full and unlimited liability for any losses, damages, claims, or expenses (including consequential, indirect, and punitive damages) arising from the services provided, regardless of cause or fault.
+
+─────────────────────────────────────────────────────────────────
+8. TERMINATION PROVISIONS
+─────────────────────────────────────────────────────────────────
+
+8.1 Client may terminate this Agreement immediately upon written notice for any reason or no reason at its sole discretion.
+
+8.2 In the event of termination by Client, all outstanding invoices shall be deemed null and void, and Consultant shall return any materials within forty-eight (48) hours.
+
+8.3 Consultant may request termination by submitting a written petition to Client, subject to a ninety (90) day notice period and Client's approval. Such request may be denied if Client determines the services are critical.
+
+─────────────────────────────────────────────────────────────────
+9. DISPUTE RESOLUTION
+─────────────────────────────────────────────────────────────────
+
+9.1 Any disputes arising from this Agreement shall be resolved through good-faith negotiation between the parties.
+
+9.2 If negotiation fails, disputes shall be submitted to binding arbitration in Singapore under ICC rules. Consultant agrees to bear all arbitration costs and waives the right to appeal.
+
+─────────────────────────────────────────────────────────────────
+10. GENERAL PROVISIONS
+─────────────────────────────────────────────────────────────────
+
+10.1 This Agreement shall be governed by the laws of India.
+
+10.2 If any provision is found unenforceable, remaining provisions shall continue in full force.
+
+10.3 This Agreement constitutes the entire understanding between parties.
+
+10.4 Amendments require written consent from Client. Consultant's performance of additional work constitutes acceptance of any verbal modifications.
+
+
+IN WITNESS WHEREOF, the parties have executed this Agreement:
+
+
+SERVICE RECIPIENT:
+TechVenture Solutions Pvt. Ltd.
+
+By: _________________________
+Name: Vikram Malhotra
+Title: Chief Executive Officer
+Date: ________________________
+
+
+SERVICE PROVIDER:
+
+Signature: ____________________
+Name: ________________________
+Date: _________________________
+
+
+────────────────────────────────
+Please note: Due to business urgency, we kindly request signature within 48 hours. Standard industry terms.

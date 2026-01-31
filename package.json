@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx lib/db/seed.ts",
+    "generate-embeddings": "tsx scripts/generateEmbeddings.ts",
     "check-db": "tsx -e \"import { getDatabaseStats } from './lib/db/queries'; console.log(getDatabaseStats());\""
   },
   "dependencies": {
@@ -19,8 +20,10 @@
     "@tailwindcss/postcss": "^4.1.18",
     "@types/nodemailer": "^7.0.9",
     "better-sqlite3": "^12.6.2",
+    "chromadb": "^3.2.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
     "lucide-react": "^0.468.0",
     "mammoth": "^1.8.0",
     "next": "^15.5.11",
