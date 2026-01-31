@@ -1,6 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+import { getTextEmbedding } from '../services/huggingface.service';
 
 /**
  * Calculate cosine similarity between two vectors
@@ -29,22 +27,19 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 }
 
 /**
- * Get embedding vector from Gemini API
- * Uses text-embedding-004 model (768 dimensions)
+ * Get embedding vector from HuggingFace API
+ * Uses sentence-transformers/all-mpnet-base-v2 model (768 dimensions)
  */
 export async function getEmbedding(text: string): Promise<number[]> {
     const startTime = Date.now();
 
     try {
-        const model = genAI.getGenerativeModel({ model: 'text-embedding-004' });
-
         // Enhance legal context for better embeddings
         const enhancedText = `Legal contract clause: ${text}`;
 
         console.log(`[EMBEDDING] 🔄 Generating embedding for: "${text.substring(0, 80)}..."`);
 
-        const result = await model.embedContent(enhancedText);
-        const embedding = result.embedding.values;
+        const embedding = await getTextEmbedding(enhancedText);
 
         const duration = Date.now() - startTime;
         console.log(`[EMBEDDING] ✅ Generated ${embedding.length}-dim vector in ${duration}ms`);

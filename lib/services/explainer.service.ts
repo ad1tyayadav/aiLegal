@@ -1,13 +1,8 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { chatCompletion } from './huggingface.service';
 import { getExplanationTemplate } from '../db/queries';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
-// Define models to try in order of preference
-const MODELS = ['gemini-1.5-flash', 'gemini-pro', 'gemini-1.5-pro-latest'];
-
 /**
- * Generate role-based explanations using Gemini API with fallback models
+ * Generate role-based explanations using HuggingFace AI with fallback
  * Returns BOTH freelancer and company perspectives in one call
  */
 export async function explainClause(
@@ -64,7 +59,7 @@ RULES:
 - Cite the Indian law section number
 - Keep each explanation to 2-3 sentences
 
-Return JSON:
+Return JSON ONLY (no markdown, no code blocks):
 {
   "freelancer": {
     "simpleExplanation": "...",
@@ -110,43 +105,37 @@ Return ONLY valid JSON (no markdown, no code blocks):
 }
 
 /**
- * Execute generation with model fallback loop
+ * Execute generation with HuggingFace and fallback handling
  */
 async function executeExplanation(prompt: string, template: any, clauseText: string) {
-    let lastError;
+    try {
+        console.log(`[EXPLAINER] 🤖 Generating explanation with HuggingFace...`);
 
-    for (const modelName of MODELS) {
-        try {
-            console.log(`[EXPLAINER] 🤖 Attempting explanation with ${modelName}...`);
-            const model = genAI.getGenerativeModel({ model: modelName });
+        const text = await chatCompletion(prompt, {
+            temperature: 0.7,
+            maxTokens: 1024,
+        });
 
-            const result = await model.generateContent(prompt);
-            const text = result.response.text();
-
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) {
-                throw new Error(`Invalid JSON from ${modelName}`);
-            }
-
-            const parsed = JSON.parse(jsonMatch[0]);
-
-            // Validate structure
-            if (!parsed.freelancer || !parsed.company) {
-                throw new Error('Incomplete JSON structure');
-            }
-
-            console.log(`[EXPLAINER] ✅ Success with ${modelName}`);
-            return parsed;
-
-        } catch (error: any) {
-            console.warn(`[EXPLAINER] ⚠️ ${modelName} failed:`, error.message);
-            lastError = error;
-            // Continue to next model
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+            throw new Error(`Invalid JSON response from HuggingFace`);
         }
-    }
 
-    console.error(`[EXPLAINER] ❌ All models failed. Using static fallback.`);
-    return getStaticFallback(clauseText, template);
+        const parsed = JSON.parse(jsonMatch[0]);
+
+        // Validate structure
+        if (!parsed.freelancer || !parsed.company) {
+            throw new Error('Incomplete JSON structure');
+        }
+
+        console.log(`[EXPLAINER] ✅ Successfully generated explanation`);
+        return parsed;
+
+    } catch (error: any) {
+        console.error(`[EXPLAINER] ❌ HuggingFace failed:`, error.message);
+        console.log(`[EXPLAINER] 📦 Using static fallback`);
+        return getStaticFallback(clauseText, template);
+    }
 }
 
 /**

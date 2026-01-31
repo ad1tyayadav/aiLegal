@@ -183,6 +183,6 @@ export async function runEmbeddingGeneration() {
     }
 
     if (failed > 0) {
-        console.log('⚠️ Some embeddings failed. Check your GEMINI_API_KEY.\n');
+        console.log('⚠️ Some embeddings failed. Check your HF_TOKEN.\n');
     }
 }

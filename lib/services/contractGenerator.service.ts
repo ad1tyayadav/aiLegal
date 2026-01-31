@@ -1,15 +1,11 @@
 /**
  * Contract Generator Service
  * 
- * Uses Gemini AI to generate contract drafts based on user prompts.
+ * Uses HuggingFace AI to generate contract drafts based on user prompts.
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { chatCompletion } from './huggingface.service';
 import { getTemplateById, getClauses, getTemplates } from './contractManager.service';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-// Use gemini-1.5-flash as it is more stable for free tier
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 export interface GeneratedContract {
     title: string;
@@ -68,70 +64,58 @@ RULES:
 - Ensure compliance with Indian law
 - Use ₹ for currency
 
-FORMAT YOUR RESPONSE AS JSON:
+FORMAT YOUR RESPONSE AS JSON (no markdown code blocks):
 {
   "title": "Contract Title",
   "content": "# CONTRACT TITLE\\n\\n**Date:** {{DATE}}\\n\\n... full markdown content ...",
   "suggestedCategories": ["Confidentiality", "Payment", "Termination"]
 }`;
 
-    // Helper to try generation with a specific model
-    const generateWithModel = async (modelName: string): Promise<any> => {
-        console.log(`[CONTRACT_GEN] 🤖 Attempting with model: ${modelName}`);
-        const currentModel = genAI.getGenerativeModel({ model: modelName });
-        const result = await currentModel.generateContent(systemPrompt);
-        return result;
-    };
-
-    // Retry Loop with Model Fallback
-    // gemini-1.5-flash caused 404s for some keys, using gemini-pro as stable fallback
-    const modelsToTry = ['gemini-1.5-flash', 'gemini-pro'];
+    // Retry Loop with backoff
     let lastError;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+            console.log(`[CONTRACT_GEN] 🤖 Attempt ${attempt}/3 with HuggingFace...`);
 
-    for (const modelName of modelsToTry) {
-        for (let attempt = 1; attempt <= 3; attempt++) {
-            try {
-                const result = await generateWithModel(modelName);
-                const text = result.response.text();
+            const text = await chatCompletion(systemPrompt, {
+                temperature: 0.7,
+                maxTokens: 4096,
+            });
 
-                // Extract JSON from response
-                const jsonMatch = text.match(/\{[\s\S]*\}/);
-                if (!jsonMatch) {
-                    throw new Error('Invalid Gemini response format');
-                }
+            // Extract JSON from response
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) {
+                throw new Error('Invalid HuggingFace response format');
+            }
 
-                const parsed = JSON.parse(jsonMatch[0]);
+            const parsed = JSON.parse(jsonMatch[0]);
 
-                // Map suggested categories to actual clause IDs
-                const suggestedClauses = availableClauses
-                    .filter(c => parsed.suggestedCategories?.includes(c.category))
-                    .map(c => c.id.toString());
+            // Map suggested categories to actual clause IDs
+            const suggestedClauses = availableClauses
+                .filter(c => parsed.suggestedCategories?.includes(c.category))
+                .map(c => c.id.toString());
 
-                console.log(`[CONTRACT_GEN] ✅ generated with ${modelName}`);
+            console.log(`[CONTRACT_GEN] ✅ Generated contract successfully`);
 
-                return {
-                    title: parsed.title || 'Untitled Contract',
-                    content: parsed.content || '',
-                    suggestedClauses,
-                    isFallback: false
-                };
+            return {
+                title: parsed.title || 'Untitled Contract',
+                content: parsed.content || '',
+                suggestedClauses,
+                isFallback: false
+            };
 
-            } catch (error: any) {
-                console.warn(`[CONTRACT_GEN] ⚠️ Attempt ${attempt} failed with ${modelName}:`, error.message);
-                lastError = error;
+        } catch (error: any) {
+            console.warn(`[CONTRACT_GEN] ⚠️ Attempt ${attempt} failed:`, error.message);
+            lastError = error;
 
-                // If rate limit (429), wait before retry relative to attempt count
-                if (error.message.includes('429')) {
-                    const waitTime = attempt * 2000; // 2s, 4s, 6s
-                    console.log(`[CONTRACT_GEN] ⏳ Rate limited. Waiting ${waitTime}ms...`);
-                    await new Promise(resolve => setTimeout(resolve, waitTime));
-                } else {
-                    // If not rate limit, try next model immediately (unless it's the last attempt of this model)
-                    if (attempt < 3) {
-                        // wait a bit even for non-rate limit errors to be safe
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
-                }
+            // If rate limit (429), wait before retry
+            if (error.message.includes('429')) {
+                const waitTime = attempt * 2000; // 2s, 4s, 6s
+                console.log(`[CONTRACT_GEN] ⏳ Rate limited. Waiting ${waitTime}ms...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            } else {
+                // Wait a bit even for non-rate limit errors
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
     }
@@ -161,11 +145,10 @@ function generateFallbackContract(prompt: string): { title: string, content: str
         const templates = getTemplates();
 
         // 1. Try to find a matching template by category or title keywords
-        // Keywords: 'nda', 'confidentiality', 'freelance', 'web', 'intern', 'employment'
         console.log(`[CONTRACT_GEN] 🔍 Searching fallback for keywords in: "${lowerPrompt}"`);
 
         const match = templates.find(t => {
-            const cat = t.category.toLowerCase(); // 'freelance', 'nda', 'employment'
+            const cat = t.category.toLowerCase();
             const titleWords = t.title.toLowerCase().split(' ');
 
             // Direct category match
@@ -294,8 +277,11 @@ RULES:
 - Only return the contract text, no explanation`;
 
     try {
-        const result = await model.generateContent(prompt);
-        return result.response.text();
+        const result = await chatCompletion(prompt, {
+            temperature: 0.5,
+            maxTokens: 4096,
+        });
+        return result;
     } catch (error) {
         console.error('[CONTRACT_GEN] ❌ Error enhancing contract:', error);
         // Simple fallback: append the clause

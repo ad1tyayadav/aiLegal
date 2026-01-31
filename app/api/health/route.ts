@@ -15,7 +15,7 @@ export async function GET() {
             services: {
                 pdfExtractor: 'operational',
                 indianLawValidator: 'operational',
-                geminiExplainer: 'operational'
+                huggingfaceAI: 'operational'
             }
         });
     } catch (error) {

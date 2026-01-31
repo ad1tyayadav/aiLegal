@@ -4,6 +4,7 @@ import { parseIntoClauses } from '@/lib/services/parser.service';
 import { validateAgainstIndianLaw } from '@/lib/services/indianLawValidator.service';
 import { validateSemantic, clearEmbeddingCache } from '@/lib/services/semanticValidator.service';
 import { enhancedDeviationChecker, checkDeviationsFromFairContract } from '@/lib/services/deviationChecker.service';
+import { generateDeviationSummaries } from '@/lib/services/deviationSummary.service';
 import { calculateRiskScore, getRiskLevel, enhancedScorer, ContractContext } from '@/lib/services/scorer.service';
 import { explainClause } from '@/lib/services/explainer.service';
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE, DISCLAIMER, IMPACT_PROFILES } from '@/lib/utils/constants';
@@ -235,16 +236,21 @@ export async function POST(request: NextRequest) {
 
         // 8. Check deviations from fair contract baseline (ENHANCED with context)
         console.log('[STEP 6] ⚖️ Checking deviations from fair contract...');
-        const deviations = enhancedDeviationChecker.check(text, context);
-        console.log(`[STEP 6] ✅ Found ${deviations.length} deviations\n`);
+        const rawDeviations = enhancedDeviationChecker.check(text, context);
+        console.log(`[STEP 6] ✅ Found ${rawDeviations.length} deviations`);
+
+        // 8b. Generate AI summaries for deviations (ENHANCED with HuggingFace)
+        console.log('[STEP 6b] 🤖 Generating AI summaries for deviations...');
+        const deviations = await generateDeviationSummaries(rawDeviations, text);
+        console.log(`[STEP 6b] ✅ AI summaries generated\n`);
 
         // 9. Calculate risk score (ENHANCED with context-aware scoring)
         console.log('[STEP 7] 📊 Calculating context-aware risk score...');
         const scoringResult = enhancedScorer.calculateOverallScore(combinedViolations, context);
         console.log(`[STEP 7] ✅ Risk score: ${scoringResult.score}/100 (${scoringResult.level})\n`);
 
-        // 10. Generate role-based explanations using Gemini (IN PARALLEL for speed)
-        console.log('[STEP 8] 💬 Generating role-based explanations with Gemini...');
+        // 10. Generate role-based explanations using HuggingFace AI (IN PARALLEL for speed)
+        console.log('[STEP 8] 💬 Generating role-based explanations with HuggingFace...');
         const explainedViolations = await Promise.all(
             combinedViolations.map(async (violation, index) => {
                 // Default explanations for both roles
@@ -261,7 +267,7 @@ export async function POST(request: NextRequest) {
                     freelancerExplanation = explained.freelancer;
                     companyExplanation = explained.company;
                 } catch (err) {
-                    console.warn(`[EXPLAIN] ⚠️ Gemini failed for clause ${violation.clauseId}, using fallback`);
+                    console.warn(`[EXPLAIN] ⚠️ HuggingFace failed for clause ${violation.clauseId}, using fallback`);
                     freelancerExplanation = {
                         simpleExplanation: violation.explanation,
                         realLifeImpact: 'This clause may put you at a significant disadvantage. Consider negotiating better terms.'
@@ -328,7 +334,7 @@ export async function POST(request: NextRequest) {
                             simple: companyExplanation.simpleExplanation,
                             realLifeImpact: companyExplanation.realLifeImpact
                         },
-                        generatedBy: 'gemini-2.0-flash'
+                        generatedBy: 'huggingface-qwen3'
                     }
                 };
             })

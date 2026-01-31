@@ -11,7 +11,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Mail, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, CheckCircle, AlertCircle, Loader2, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -20,6 +20,7 @@ interface Props {
 
 export default function EmailDialog({ results }: Props) {
     const [email, setEmail] = useState('');
+    const [attachPdf, setAttachPdf] = useState(true);
     const [sending, setSending] = useState(false);
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [open, setOpen] = useState(false);
@@ -36,7 +37,9 @@ export default function EmailDialog({ results }: Props) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     email,
-                    results
+                    results,
+                    attachPdf,
+                    baseUrl: window.location.origin
                 })
             });
 
@@ -73,10 +76,11 @@ export default function EmailDialog({ results }: Props) {
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="flex items-center space-x-2 py-4">
-                    <div className="grid flex-1 gap-2">
-                        <label htmlFor="email" className="sr-only">
-                            Email
+                <div className="space-y-4 py-4">
+                    {/* Email Input */}
+                    <div className="grid gap-2">
+                        <label htmlFor="email" className="text-sm font-medium">
+                            Email Address
                         </label>
                         <input
                             id="email"
@@ -86,6 +90,32 @@ export default function EmailDialog({ results }: Props) {
                             onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
+
+                    {/* PDF Attachment Checkbox */}
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border">
+                        <input
+                            type="checkbox"
+                            id="attachPdf"
+                            checked={attachPdf}
+                            onChange={(e) => setAttachPdf(e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <label htmlFor="attachPdf" className="flex items-center gap-2 cursor-pointer">
+                            <FileText className="w-4 h-4 text-muted-foreground" />
+                            <div>
+                                <span className="text-sm font-medium">Attach PDF Report</span>
+                                <p className="text-xs text-muted-foreground">Include color-coded analysis as PDF attachment</p>
+                            </div>
+                        </label>
+                    </div>
+
+                    {/* Notice */}
+                    {attachPdf && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                            <span className="text-amber-500">⚡</span>
+                            PDF generation may take a few extra seconds
+                        </p>
+                    )}
                 </div>
 
                 <DialogFooter className="sm:justify-start">

@@ -37,6 +37,9 @@ export interface Deviation {
     fairStandard: string;
     deviationLevel: 'EXTREME' | 'SIGNIFICANT' | 'MINOR';
     explanation: string;
+    legalReference?: string;  // Indian Contract Act section reference
+    aiSummary?: string;       // AI-generated plain-language explanation
+    matchedText?: string;     // Actual text from contract (for highlighting)
 }
 
 export interface AnalysisResult {
