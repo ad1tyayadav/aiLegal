@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx lib/db/seed.ts",
+    "seed:enhanced": "tsx lib/db/seed.enhanced.ts",
     "generate-embeddings": "tsx scripts/generateEmbeddings.ts",
     "check-db": "tsx -e \"import { getDatabaseStats } from './lib/db/queries'; console.log(getDatabaseStats());\""
   },

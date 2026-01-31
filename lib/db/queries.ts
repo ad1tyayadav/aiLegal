@@ -1,23 +1,32 @@
 import { db } from './client';
 
 /**
- * Get all clause patterns
+ * Get all clause patterns (enhanced with new columns)
  */
 export function getAllClausePatterns() {
   return db.prepare(`
     SELECT 
+      cp.id,
+      cp.pattern_id,
       cp.clause_type,
       cp.keywords,
       cp.risk_level,
       cp.risk_score,
       cp.linked_section,
       cp.description,
+      cp.regex_pattern,
+      cp.semantic_examples,
+      cp.context_required,
+      cp.modifiers,
+      cp.industry_tags,
+      cp.explanation_en,
+      cp.explanation_hi,
       acts.section_number,
       acts.section_title,
       acts.full_text,
       acts.gov_url
     FROM clause_patterns cp
-    JOIN act_sections acts ON cp.linked_section = acts.section_number
+    LEFT JOIN act_sections acts ON cp.linked_section = acts.section_number
   `).all();
 }
 

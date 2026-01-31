@@ -1,0 +1,229 @@
+FREELANCE SOFTWARE DEVELOPMENT AGREEMENT
+
+This Agreement is made on January 20, 2026
+
+BETWEEN:
+
+DigiCraft Solutions Private Limited
+Registered Office: 3rd Floor, Prestige Tech Park, Marathahalli, Bangalore - 560037
+CIN: U72900KA2019PTC127845
+GST: 29AACCD5678F1Z9
+(hereinafter referred to as "Client")
+
+AND
+
+[Your Name]
+Address: [Your Address]
+PAN: [Your PAN Number]
+(hereinafter referred to as "Developer")
+
+WHEREAS the Client wishes to engage the Developer to create a mobile application for employee attendance tracking, and the Developer has agreed to provide such services on the terms set forth herein.
+
+NOW THEREFORE, in consideration of the mutual promises and covenants contained herein, the parties agree as follows:
+
+1. PROJECT SCOPE
+
+1.1 The Developer shall design and develop a mobile application ("the Application") with the following features:
+    a) Employee attendance marking via GPS and biometric authentication
+    b) Leave management system
+    c) Shift scheduling and roster management
+    d) Real-time attendance reports and analytics
+    e) Push notifications for attendance reminders
+    f) Admin dashboard for HR management
+
+1.2 The Application shall be developed for both Android and iOS platforms.
+
+1.3 The Developer shall deliver the complete source code, technical documentation, user manuals, and deployment guidelines.
+
+2. PROJECT TIMELINE
+
+2.1 Project Duration: 120 days from the date of this Agreement
+
+2.2 Milestone Schedule:
+    - Week 4: UI/UX designs and wireframes
+    - Week 8: Backend API development completion
+    - Week 12: Android app development completion
+    - Week 16: iOS app development completion
+    - Week 17: Final testing and deployment
+
+2.3 The timeline may be extended by mutual written consent if unforeseen technical challenges arise.
+
+3. COMPENSATION AND PAYMENT TERMS
+
+3.1 Total Project Fee: INR 8,50,000 (Rupees Eight Lakh Fifty Thousand Only)
+
+3.2 Payment Schedule:
+    a) 25% (INR 2,12,500) - Upon signing this Agreement (Advance)
+    b) 25% (INR 2,12,500) - Upon completion of UI/UX designs (Week 4)
+    c) 30% (INR 2,55,000) - Upon completion of backend and Android app (Week 12)
+    d) 20% (INR 1,70,000) - Upon final delivery and UAT approval (Week 17)
+
+3.3 All payments shall be made via NEFT/RTGS within 30 days of receiving a valid GST invoice from the Developer.
+
+3.4 The Developer shall issue tax-compliant invoices as per Indian GST regulations.
+
+4. INTELLECTUAL PROPERTY RIGHTS
+
+4.1 Work Product Ownership: Upon full payment of all fees due under this Agreement, all intellectual property rights in the Application, including source code, designs, documentation, and related materials created specifically for this project, shall transfer to the Client.
+
+4.2 Developer's Pre-existing IP: The Developer may use pre-existing code libraries, frameworks, and tools (such as React Native, Node.js, Firebase) to develop the Application. The Developer retains ownership of such pre-existing materials, and grants the Client a perpetual, non-exclusive, royalty-free license to use such materials as incorporated in the Application.
+
+4.3 Third-Party Components: The Developer shall ensure that any third-party libraries or components used are properly licensed (MIT, Apache 2.0, or similar permissive licenses) and shall disclose all such dependencies.
+
+4.4 Attribution: The Developer may include a discreet credit line in the Application's "About" section (e.g., "Developed by [Developer Name]") unless the Client objects.
+
+5. CONFIDENTIALITY
+
+5.1 Definition: "Confidential Information" means any non-public information disclosed by either party including business plans, technical data, customer information, source code, and trade secrets.
+
+5.2 Obligations: Both parties agree to:
+    a) Maintain confidentiality of all Confidential Information
+    b) Use Confidential Information solely for the purposes of this Agreement
+    c) Not disclose Confidential Information to third parties without prior written consent
+
+5.3 Duration: The confidentiality obligations shall continue for a period of 3 years from the date of disclosure.
+
+5.4 Exceptions: Confidential Information does not include information that:
+    a) Is publicly available through no fault of the receiving party
+    b) Was already known to the receiving party prior to disclosure
+    c) Is independently developed by the receiving party
+    d) Must be disclosed pursuant to law or court order
+
+6. REPRESENTATIONS AND WARRANTIES
+
+6.1 Developer's Warranties:
+    a) The Developer has the necessary skills and expertise to perform the Services
+    b) The Work Product shall be original and shall not infringe any third-party intellectual property rights
+    c) The Developer shall comply with all applicable laws and regulations
+    d) The Application will be developed using industry-standard coding practices
+
+6.2 Client's Warranties:
+    a) The Client has the authority to enter into this Agreement
+    b) The Client shall provide timely feedback and approvals as required
+    c) The Client shall pay all fees as per the agreed schedule
+
+6.3 Warranty Period: The Developer warrants that the Application will be free from material defects for 90 days from the date of final delivery. During this period, the Developer shall fix any bugs or defects at no additional cost.
+
+6.4 Limitation: THE WARRANTIES SET FORTH ABOVE ARE IN LIEU OF ALL OTHER WARRANTIES, EXPRESS OR IMPLIED, INCLUDING ANY WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE.
+
+7. LIABILITY AND INDEMNIFICATION
+
+7.1 Limitation of Liability: Neither party shall be liable for any indirect, incidental, special, or consequential damages arising out of this Agreement.
+
+7.2 Cap on Liability: The total liability of the Developer under this Agreement shall not exceed the total fees paid or payable under this Agreement.
+
+7.3 Mutual Indemnification: Each party shall indemnify and hold harmless the other party from claims arising from:
+    a) Breach of representations and warranties
+    b) Violation of applicable laws
+    c) Infringement of third-party intellectual property rights
+
+8. INDEPENDENT CONTRACTOR RELATIONSHIP
+
+8.1 The Developer is an independent contractor and not an employee, partner, or agent of the Client.
+
+8.2 The Developer shall be solely responsible for:
+    a) Payment of all taxes, including income tax and GST
+    b) Professional indemnity insurance (if applicable)
+    c) Compliance with all applicable laws and regulations
+
+8.3 The Developer shall not be entitled to any employee benefits from the Client.
+
+8.4 The Developer may engage sub-contractors with prior written consent from the Client, provided that the Developer remains fully responsible for all work performed.
+
+9. TERMINATION
+
+9.1 Termination for Convenience: Either party may terminate this Agreement by providing 30 days' written notice to the other party.
+
+9.2 Termination for Cause: Either party may terminate immediately upon written notice if:
+    a) The other party commits a material breach and fails to cure within 15 days of written notice
+    b) The other party becomes insolvent or files for bankruptcy
+
+9.3 Payment on Termination:
+    a) If Client terminates without cause: Client shall pay for all work completed up to the termination date based on the milestone schedule
+    b) If Developer terminates without cause: Developer shall refund any advance payment for work not yet performed
+    c) If termination is for cause: The non-breaching party may seek appropriate remedies
+
+9.4 Return of Materials: Upon termination, the Developer shall promptly deliver all completed work and return any Client materials.
+
+10. DISPUTE RESOLUTION
+
+10.1 Governing Law: This Agreement shall be governed by the laws of India.
+
+10.2 Jurisdiction: The courts of Bangalore, Karnataka shall have exclusive jurisdiction over any disputes arising from this Agreement.
+
+10.3 Amicable Resolution: Before initiating any legal proceedings, the parties agree to attempt to resolve disputes through good-faith negotiations for a period of 30 days.
+
+10.4 Mediation: If negotiations fail, the parties agree to submit the dispute to mediation under the Bangalore Mediation Centre before pursuing litigation.
+
+11. GENERAL PROVISIONS
+
+11.1 Entire Agreement: This Agreement constitutes the entire understanding between the parties and supersedes all prior agreements, whether written or oral.
+
+11.2 Amendments: Any amendments to this Agreement must be made in writing and signed by both parties.
+
+11.3 Assignment: Neither party may assign this Agreement without the prior written consent of the other party.
+
+11.4 Severability: If any provision of this Agreement is found to be invalid or unenforceable, the remaining provisions shall remain in full force and effect.
+
+11.5 Force Majeure: Neither party shall be liable for delays or failures in performance resulting from acts beyond their reasonable control, including natural disasters, government actions, or pandemics.
+
+11.6 Notices: All notices under this Agreement shall be in writing and sent to:
+
+    For Client:
+    DigiCraft Solutions Private Limited
+    Email: legal@digicraftsolutions.in
+    Address: 3rd Floor, Prestige Tech Park, Marathahalli, Bangalore - 560037
+
+    For Developer:
+    Email: [Your Email]
+    Address: [Your Address]
+
+11.7 Waiver: The failure of either party to enforce any provision of this Agreement shall not constitute a waiver of that provision or any other provision.
+
+11.8 Counterparts: This Agreement may be executed in counterparts, each of which shall be deemed an original and all of which together shall constitute one instrument.
+
+12. POST-DELIVERY SUPPORT
+
+12.1 The Developer shall provide technical support and minor bug fixes free of charge for 90 days from the date of final delivery.
+
+12.2 After the warranty period, ongoing maintenance and support may be provided under a separate agreement at mutually agreed rates.
+
+12.3 Any enhancements or new features requested after delivery shall be considered outside the scope of this Agreement and shall require a separate written agreement.
+
+13. PROFESSIONAL CONDUCT
+
+13.1 Both parties agree to conduct themselves professionally and maintain open communication throughout the project.
+
+13.2 The Developer shall attend weekly progress meetings (virtual or in-person) as mutually scheduled, recognizing that the Developer maintains flexibility in work hours and location as befits an independent contractor arrangement.
+
+13.3 The Client shall provide timely feedback on deliverables within 5 business days to avoid project delays.
+
+13.4 Portfolio Rights: The Developer may showcase the Application in their professional portfolio and use it as a case study for marketing purposes, provided that no Confidential Information is disclosed.
+
+
+IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.
+
+
+FOR CLIENT:
+DigiCraft Solutions Private Limited
+
+____________________________
+Signature
+Name: Priya Sharma
+Designation: Chief Technology Officer
+Date: _______________
+
+
+FOR DEVELOPER:
+
+____________________________
+Signature
+Name: [Your Name]
+Date: _______________
+
+
+ANNEXURES:
+
+Annexure A: Detailed Technical Specifications (to be provided by Client within 7 days)
+Annexure B: Developer's Bank Details for Payment Processing
+Annexure C: List of Third-Party Libraries and Dependencies (to be updated by Developer)

@@ -31,14 +31,61 @@ CREATE TABLE IF NOT EXISTS act_embeddings (
 
 CREATE TABLE IF NOT EXISTS clause_patterns (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  clause_type TEXT NOT NULL,            -- "non_compete_section27", "unlawful_object_section23"
-  keywords TEXT NOT NULL,               -- JSON array: ["non-compete", "restraint of trade"]
-  risk_level TEXT NOT NULL,             -- "CRITICAL", "HIGH", "MEDIUM", "LOW"
-  risk_score INTEGER NOT NULL,          -- Numeric: CRITICAL=40, HIGH=25, MEDIUM=15, LOW=5
-  linked_section TEXT NOT NULL,         -- "Section 27" (FK to act_sections)
+  pattern_id TEXT UNIQUE,                 -- Unique ID like 's27_non_compete_01'
+  clause_type TEXT NOT NULL,              -- "non_compete_section27", "unlawful_object_section23"
+  keywords TEXT NOT NULL,                 -- JSON array: ["non-compete", "restraint of trade"]
+  risk_level TEXT NOT NULL,               -- "CRITICAL", "HIGH", "MEDIUM", "LOW"
+  risk_score INTEGER NOT NULL,            -- Numeric: CRITICAL=40, HIGH=25, MEDIUM=15, LOW=5
+  linked_section TEXT NOT NULL,           -- "Section 27" (FK to act_sections)
   description TEXT NOT NULL,
-  example_violation TEXT,               -- Example of how this appears in contracts
+  example_violation TEXT,                 -- Example of how this appears in contracts
+  -- NEW: Enhanced pattern matching
+  regex_pattern TEXT,                     -- Advanced pattern matching regex
+  semantic_examples TEXT,                 -- Examples for embedding generation (comma-separated)
+  context_required TEXT DEFAULT 'all',    -- freelance|employment|vendor|consultant|all
+  modifiers TEXT,                         -- JSON: scoring modifiers
+  industry_tags TEXT DEFAULT 'all',       -- software|design|content|video|marketing|all
+  explanation_en TEXT,                    -- English explanation
+  explanation_hi TEXT,                    -- Hindi explanation
+  explanation_context TEXT,               -- Additional context for AI explanations
   FOREIGN KEY (linked_section) REFERENCES act_sections(section_number)
+);
+
+-- =====================================================
+-- CONTRACT ANALYSIS CONTEXT (Analytics)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS contract_analysis_context (
+  analysis_id TEXT PRIMARY KEY,
+  contract_type TEXT DEFAULT 'freelance', -- freelance, employment, vendor, consultant
+  industry TEXT DEFAULT 'general',        -- software, design, writing, video, marketing, general
+  contract_value_inr INTEGER,             -- Contract value in INR
+  duration_months INTEGER,                -- Contract duration
+  user_experience_years INTEGER,          -- User's experience level
+  file_type TEXT,                         -- pdf, docx, txt
+  file_name TEXT,
+  processing_time_ms INTEGER,
+  risk_score INTEGER,
+  risk_level TEXT,
+  violations_count INTEGER,
+  keyword_matches INTEGER,
+  semantic_matches INTEGER,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =====================================================
+-- VIOLATION FEEDBACK (Accuracy Tracking)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS violation_feedback (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  analysis_id TEXT,
+  pattern_id TEXT,
+  violation_type TEXT,
+  user_feedback TEXT,                     -- accurate, false_positive, severity_wrong, missed
+  user_comment TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (analysis_id) REFERENCES contract_analysis_context(analysis_id)
 );
 
 -- =====================================================
@@ -74,7 +121,12 @@ CREATE TABLE IF NOT EXISTS explanation_templates (
 CREATE INDEX IF NOT EXISTS idx_section_number ON act_sections(section_number);
 CREATE INDEX IF NOT EXISTS idx_clause_type ON clause_patterns(clause_type);
 CREATE INDEX IF NOT EXISTS idx_risk_level ON clause_patterns(risk_level);
+CREATE INDEX IF NOT EXISTS idx_pattern_id ON clause_patterns(pattern_id);
+CREATE INDEX IF NOT EXISTS idx_context_required ON clause_patterns(context_required);
 CREATE INDEX IF NOT EXISTS idx_embeddings_section ON act_embeddings(section_number);
+CREATE INDEX IF NOT EXISTS idx_analysis_context_type ON contract_analysis_context(contract_type);
+CREATE INDEX IF NOT EXISTS idx_analysis_context_created ON contract_analysis_context(created_at);
+CREATE INDEX IF NOT EXISTS idx_feedback_analysis ON violation_feedback(analysis_id);
 
 -- =====================================================
 -- CONTRACT DRAFTING FEATURE

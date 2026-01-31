@@ -3,11 +3,17 @@ import { extractText } from '@/lib/services/extractor.service';
 import { parseIntoClauses } from '@/lib/services/parser.service';
 import { validateAgainstIndianLaw } from '@/lib/services/indianLawValidator.service';
 import { validateSemantic, clearEmbeddingCache } from '@/lib/services/semanticValidator.service';
-import { checkDeviationsFromFairContract } from '@/lib/services/deviationChecker.service';
-import { calculateRiskScore, getRiskLevel } from '@/lib/services/scorer.service';
+import { enhancedDeviationChecker, checkDeviationsFromFairContract } from '@/lib/services/deviationChecker.service';
+import { calculateRiskScore, getRiskLevel, enhancedScorer, ContractContext } from '@/lib/services/scorer.service';
 import { explainClause } from '@/lib/services/explainer.service';
 import { ALLOWED_FILE_TYPES, MAX_FILE_SIZE, DISCLAIMER, IMPACT_PROFILES } from '@/lib/utils/constants';
 import type { IndianLawViolation, SemanticMatch } from '@/lib/types/contract.types';
+import { db } from '@/lib/db/client';
+
+// Generate unique analysis ID
+function generateAnalysisId(): string {
+    return `analysis_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
 
 /**
  * Merge keyword and semantic results
@@ -74,11 +80,78 @@ function mergeResults(
     return combined;
 }
 
+/**
+ * Parse contract context from form data
+ * All context fields are OPTIONAL for backward compatibility
+ */
+function parseContractContext(formData: FormData): ContractContext {
+    const contractType = formData.get('contractType') as string;
+    const industry = formData.get('industry') as string;
+    const contractValue = formData.get('contractValue');
+    const durationMonths = formData.get('durationMonths');
+    const userExperience = formData.get('userExperience');
+
+    return {
+        contractType: (['freelance', 'employment', 'vendor', 'consultant'].includes(contractType)
+            ? contractType : 'freelance') as ContractContext['contractType'],
+        industry: (['software', 'design', 'writing', 'video', 'marketing'].includes(industry)
+            ? industry : 'general') as ContractContext['industry'],
+        contractValue: contractValue ? parseInt(contractValue as string) : undefined,
+        durationMonths: durationMonths ? parseInt(durationMonths as string) : undefined,
+        userExperience: userExperience ? parseInt(userExperience as string) : undefined,
+    };
+}
+
+/**
+ * Store analysis context for analytics (non-blocking)
+ */
+async function storeAnalysisContext(
+    analysisId: string,
+    context: ContractContext,
+    file: File,
+    scoring: { score: number; level: string },
+    keywordCount: number,
+    semanticCount: number,
+    processingTime: number
+): Promise<void> {
+    try {
+        db.prepare(`
+            INSERT INTO contract_analysis_context 
+            (analysis_id, contract_type, industry, contract_value_inr, 
+             duration_months, user_experience_years, file_type, file_name,
+             processing_time_ms, risk_score, risk_level, violations_count, 
+             keyword_matches, semantic_matches)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            analysisId,
+            context.contractType,
+            context.industry,
+            context.contractValue || null,
+            context.durationMonths || null,
+            context.userExperience || null,
+            file.type,
+            file.name,
+            processingTime,
+            scoring.score,
+            scoring.level,
+            keywordCount + semanticCount,
+            keywordCount,
+            semanticCount
+        );
+        console.log(`[ANALYTICS] 📊 Stored analysis context: ${analysisId}`);
+    } catch (error) {
+        console.warn('[ANALYTICS] ⚠️ Failed to store analytics:', error);
+        // Non-blocking - don't fail the request
+    }
+}
+
 export async function POST(request: NextRequest) {
     const startTime = Date.now();
+    const analysisId = generateAnalysisId();
 
     console.log('\n╔════════════════════════════════════════════════════════════╗');
     console.log('║              CONTRACT ANALYSIS REQUEST                       ║');
+    console.log(`║              ID: ${analysisId}                    ║`);
     console.log('╚════════════════════════════════════════════════════════════╝\n');
 
     try {
@@ -87,6 +160,9 @@ export async function POST(request: NextRequest) {
         const file = formData.get('file') as File;
         const language = (formData.get('language') as string) || 'en';
         const enableSemantic = formData.get('enableSemantic') !== 'false'; // default true
+
+        // NEW: Parse contract context (optional, backward compatible)
+        const context = parseContractContext(formData);
 
         if (!file) {
             return NextResponse.json(
@@ -97,7 +173,11 @@ export async function POST(request: NextRequest) {
 
         console.log(`[REQUEST] 📄 File: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`);
         console.log(`[REQUEST] 🌐 Language: ${language}`);
-        console.log(`[REQUEST] 🔍 Semantic search: ${enableSemantic ? 'ENABLED' : 'DISABLED'}\n`);
+        console.log(`[REQUEST] 🔍 Semantic search: ${enableSemantic ? 'ENABLED' : 'DISABLED'}`);
+        console.log(`[REQUEST] 📋 Context: type=${context.contractType}, industry=${context.industry}`);
+        if (context.contractValue) console.log(`[REQUEST] 💰 Contract value: ₹${context.contractValue.toLocaleString('en-IN')}`);
+        if (context.durationMonths) console.log(`[REQUEST] ⏱️ Duration: ${context.durationMonths} months`);
+        console.log('');
 
         // 2. Validate file
         if (!ALLOWED_FILE_TYPES.includes(file.type)) {
@@ -153,17 +233,18 @@ export async function POST(request: NextRequest) {
         console.log('[STEP 5] 🔀 Merging keyword + semantic results...');
         const combinedViolations = mergeResults(keywordViolations, semanticMatches);
 
-        // 8. Check deviations from fair contract baseline
+        // 8. Check deviations from fair contract baseline (ENHANCED with context)
         console.log('[STEP 6] ⚖️ Checking deviations from fair contract...');
-        const deviations = checkDeviationsFromFairContract(clauses);
+        const deviations = enhancedDeviationChecker.check(text, context);
         console.log(`[STEP 6] ✅ Found ${deviations.length} deviations\n`);
 
-        // 9. Calculate 0-100 risk score
-        const riskScore = calculateRiskScore(combinedViolations);
-        console.log(`[SCORING] 📊 Overall risk score: ${riskScore}/100 (${getRiskLevel(riskScore)})\n`);
+        // 9. Calculate risk score (ENHANCED with context-aware scoring)
+        console.log('[STEP 7] 📊 Calculating context-aware risk score...');
+        const scoringResult = enhancedScorer.calculateOverallScore(combinedViolations, context);
+        console.log(`[STEP 7] ✅ Risk score: ${scoringResult.score}/100 (${scoringResult.level})\n`);
 
         // 10. Generate role-based explanations using Gemini (IN PARALLEL for speed)
-        console.log('[STEP 7] 💬 Generating role-based explanations with Gemini...');
+        console.log('[STEP 8] 💬 Generating role-based explanations with Gemini...');
         const explainedViolations = await Promise.all(
             combinedViolations.map(async (violation, index) => {
                 // Default explanations for both roles
@@ -211,6 +292,9 @@ export async function POST(request: NextRequest) {
 
                 const profile = IMPACT_PROFILES[violation.violationType];
 
+                // Calculate context-aware score for this violation
+                const contextAwareScore = enhancedScorer.calculateViolationScore(violation, context);
+
                 return {
                     id: index + 1,
                     clauseNumber: violation.clauseId,
@@ -218,6 +302,7 @@ export async function POST(request: NextRequest) {
                     violationType: violation.violationType,
                     riskLevel: violation.riskLevel,
                     riskScore: violation.riskScore,
+                    contextAwareScore, // NEW: Score adjusted for context
                     startIndex: Math.max(0, startIndex),
                     endIndex: Math.min(text.length, endIndex),
                     appliesTo: profile?.appliesTo || ['All'],
@@ -248,23 +333,43 @@ export async function POST(request: NextRequest) {
                 };
             })
         );
-        console.log(`[STEP 7] ✅ Generated ${explainedViolations.length} explanations\n`);
+        console.log(`[STEP 8] ✅ Generated ${explainedViolations.length} explanations\n`);
 
         // Clear embedding cache at end of request
         clearEmbeddingCache();
 
         const totalTime = Date.now() - startTime;
 
-        // 11. Format response with extracted text for contract viewer
+        // 11. Store analytics (non-blocking)
+        storeAnalysisContext(
+            analysisId,
+            context,
+            file,
+            { score: scoringResult.score, level: scoringResult.level },
+            keywordViolations.length,
+            semanticMatches.length,
+            totalTime
+        );
+
+        // 12. Format response with extracted text for contract viewer
         const response = {
             success: true,
+            analysisId, // NEW: Include analysis ID for feedback
             processingTimeMs: totalTime,
-            // NEW: Performance breakdown
+            // Performance breakdown
             performance: {
                 total: totalTime,
                 keywordValidation: keywordDuration,
                 semanticValidation: semanticDuration,
                 semanticEnabled: enableSemantic
+            },
+            // NEW: Context used for scoring
+            context: {
+                contractType: context.contractType,
+                industry: context.industry,
+                contractValue: context.contractValue,
+                durationMonths: context.durationMonths,
+                userExperience: context.userExperience,
             },
             document: {
                 fileName: file.name,
@@ -275,16 +380,19 @@ export async function POST(request: NextRequest) {
                 extractedText: text  // Full text for contract viewer
             },
             analysis: {
-                overallRiskScore: riskScore,
-                riskLevel: getRiskLevel(riskScore),
+                overallRiskScore: scoringResult.score,
+                riskLevel: scoringResult.level,
+                scoreExplanation: scoringResult.explanation, // NEW: Human-readable explanation
                 totalClauses: clauses.length,
                 riskyClausesFound: combinedViolations.length,
-                // NEW: Breakdown by match source
+                // Breakdown by match source
                 matchSourceBreakdown: {
                     keyword: combinedViolations.filter(v => v.matchSource === 'keyword').length,
                     semantic: combinedViolations.filter(v => v.matchSource === 'semantic').length,
                     both: combinedViolations.filter(v => v.matchSource === 'both').length
                 },
+                // NEW: Risk score breakdown by severity
+                scoreBreakdown: scoringResult.breakdown,
                 deviationsFromFairContract: deviations.length,
                 breakdown: {
                     CRITICAL: combinedViolations.filter(v => v.riskLevel === 'CRITICAL').length,
@@ -302,7 +410,8 @@ export async function POST(request: NextRequest) {
         console.log('║              ANALYSIS COMPLETE                              ║');
         console.log('╠════════════════════════════════════════════════════════════╣');
         console.log(`║  ⏱️  Total time: ${totalTime}ms`);
-        console.log(`║  📊 Risk score: ${riskScore}/100 (${getRiskLevel(riskScore)})`);
+        console.log(`║  📊 Risk score: ${scoringResult.score}/100 (${scoringResult.level})`);
+        console.log(`║  📋 Context: ${context.contractType} / ${context.industry}`);
         console.log(`║  🔑 Keyword matches: ${keywordViolations.length}`);
         console.log(`║  🧠 Semantic matches: ${semanticMatches.length}`);
         console.log(`║  🔀 Combined unique: ${combinedViolations.length}`);
