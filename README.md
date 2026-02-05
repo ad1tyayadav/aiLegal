@@ -1,4 +1,4 @@
-# 🚀 AndhaKanoon
+# AndhaKanoon
 
 **The AI Legal Sentinel for Indian Freelancers**
 
